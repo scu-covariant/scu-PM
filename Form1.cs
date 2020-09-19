@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Wallpaper_Assistant
@@ -35,14 +37,41 @@ namespace Wallpaper_Assistant
             so.Close();
             st.Close();
         }
+        const int SPI_SETDESKWALLPAPER = 20;
+        const int SPIF_UPDATEINIFILE = 0x01;
+        const int SPIF_SENDWININICHANGE = 0x02;
+
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-        private static void SetWallpaper(string strSavePath)
+        static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+        private enum Style : int
+        {
+            Tiled,
+            Centered,
+            Stretched
+        }
+
+        private static void SetWallpaper(string strSavePath, Style style)
         {
             Bitmap myBmp = new Bitmap(strSavePath);
             string fileName = Path.GetTempFileName() + ".bmp";
             myBmp.Save(fileName, System.Drawing.Imaging.ImageFormat.Bmp);
-            SystemParametersInfo(20, 1, fileName, 1);
+            RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true);
+            if (style == Style.Stretched)
+            {
+                key.SetValue(@"WallpaperStyle", 2.ToString());
+                key.SetValue(@"TileWallpaper", 0.ToString());
+            }
+            if (style == Style.Centered)
+            {
+                key.SetValue(@"WallpaperStyle", 1.ToString());
+                key.SetValue(@"TileWallpaper", 0.ToString());
+            }
+            if (style == Style.Tiled)
+            {
+                key.SetValue(@"WallpaperStyle", 1.ToString());
+                key.SetValue(@"TileWallpaper", 1.ToString());
+            }
+            SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, fileName, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
         }
         public Form1()
         {
@@ -51,13 +80,14 @@ namespace Wallpaper_Assistant
         }
         private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
+            Thread.Sleep(5000);
             while (true)
             {
                 try
                 {
                     string wallpaperPath = Path.GetTempFileName();
                     DownloadFile("http://mirrors.covariant.cn/wallpaper/latest", wallpaperPath);
-                    SetWallpaper(wallpaperPath);
+                    SetWallpaper(wallpaperPath, Style.Stretched);
                 }
                 catch (Exception)
                 {
