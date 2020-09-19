@@ -80,21 +80,37 @@ namespace Wallpaper_Assistant
         }
         private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
-            Thread.Sleep(5000);
+            Thread.Sleep(3000);
+            string configPath = Path.Combine(System.Environment.CurrentDirectory, "config.txt");
+            if (!File.Exists(configPath))
+                throw new Exception("Config file does not exists.");
+            StreamReader sr = new StreamReader(configPath);
+            int try_count = 10;
             while (true)
             {
-                try
+                string url = sr.ReadLine();
+                if (url == null)
+                    break;
+                bool success = false;
+                for (int c = 0; c < try_count; ++c)
                 {
-                    string wallpaperPath = Path.GetTempFileName();
-                    DownloadFile("http://mirrors.covariant.cn/wallpaper/latest", wallpaperPath);
-                    SetWallpaper(wallpaperPath, Style.Stretched);
+                    try
+                    {
+                        string wallpaperPath = Path.GetTempFileName();
+                        DownloadFile(url, wallpaperPath);
+                        SetWallpaper(wallpaperPath, Style.Stretched);
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+                    success = true;
+                    break;
                 }
-                catch (Exception)
-                {
-                    continue;
-                }
-                break;
+                if (success)
+                    break;
             }
+            Thread.Sleep(2000);
         }
         private void backgroundWorker1_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
         {
