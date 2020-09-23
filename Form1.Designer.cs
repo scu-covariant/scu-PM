@@ -70,9 +70,9 @@
             this.label2.Font = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label2.Location = new System.Drawing.Point(12, 9);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(364, 17);
+            this.label2.Size = new System.Drawing.Size(200, 17);
             this.label2.TabIndex = 2;
-            this.label2.Text = "四川大学智慧教学系统壁纸同步工具 by 李登淳(lee@covariant.cn)";
+            this.label2.Text = "四川大学智慧教学系统壁纸同步工具";
             // 
             // label3
             // 

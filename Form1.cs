@@ -16,6 +16,7 @@ namespace Wallpaper_Assistant
 {
     public partial class Form1 : Form
     {
+        bool fatal = false;
         private static bool CheckValidationResult(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             return true;
@@ -61,7 +62,6 @@ namespace Wallpaper_Assistant
             Centered,
             Stretched
         }
-
         private static void SetWallpaper(string strSavePath, Style style)
         {
             Bitmap myBmp = new Bitmap(strSavePath);
@@ -95,20 +95,30 @@ namespace Wallpaper_Assistant
             Thread.Sleep(3000);
             BackgroundWorker bgWorker = sender as BackgroundWorker;
             string configPath = "C:\\wallpaper_assistant_config.txt";
-            if (!File.Exists(configPath))
-                throw new Exception("Config file does not exists.");
-            StreamReader sr = new StreamReader(configPath);
+            StreamReader sr = null;
+            try
+            {
+                sr = new StreamReader(configPath);
+            }
+            catch (Exception)
+            {
+                bgWorker.ReportProgress(-1);
+                return;
+            }
             int try_count = 10;
             // Timeout, millsec
             int time_out = 10000;
             // Interval, millsec
             int interval = 2000;
+            int success = 0;
             while (true)
             {
                 string url = sr.ReadLine();
-                if (url == null || Regex.Match(url, "^\\s$").Success)
+                if (url == null)
                     break;
-                bool success = false;
+                if (Regex.Match(url, "^\\s*$").Success)
+                    continue;
+                success = 1;
                 for (int c = 0; c < try_count; ++c)
                 {
                     if (c > 0)
@@ -119,9 +129,7 @@ namespace Wallpaper_Assistant
                         var tokenSource = new CancellationTokenSource();
                         CancellationToken token = tokenSource.Token;
                         var task = Task.Factory.StartNew(() => DownloadFile(url, wallpaperPath), token);
-                        if (!task.Wait(time_out, token))
-                            continue;
-                        if (!task.Result)
+                        if (!task.Wait(time_out, token) || !task.Result)
                         {
                             Thread.Sleep(interval);
                             continue;
@@ -132,27 +140,42 @@ namespace Wallpaper_Assistant
                     {
                         continue;
                     }
-                    success = true;
+                    success = 2;
                     break;
                 }
-                if (success)
+                if (success == 2)
                     break;
             }
-            Thread.Sleep(2000);
+            if (success == 0)
+                bgWorker.ReportProgress(-1);
+            else if (success == 1)
+                bgWorker.ReportProgress(-2);
         }
-
         private void backgroundWorker1_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
         {
-            Close();
+            if (!fatal)
+                Close();
         }
-
         private void label3_Click(object sender, EventArgs e)
         {
             Environment.Exit(0);
         }
-
         private void backgroundWorker1_ProgressChanged(object sender, System.ComponentModel.ProgressChangedEventArgs e)
         {
+            if (e.ProgressPercentage == -1)
+            {
+                fatal = true;
+                Visible = false;
+                MessageBox.Show("读取配置文件失败\n请检查 C:\\wallpaper_assistant_config.txt", "四川大学智慧教学系统壁纸同步工具", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                Close();
+            }
+            else if (e.ProgressPercentage == -2)
+            {
+                fatal = true;
+                Visible = false;
+                MessageBox.Show("联络服务器失败", "四川大学智慧教学系统壁纸同步工具", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                Close();
+            }
             label3.Visible = true;
             label2.Text = "错误：无法连接至服务器。当前已尝试" + e.ProgressPercentage.ToString() + "次";
         }
