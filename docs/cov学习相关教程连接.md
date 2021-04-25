@@ -5,7 +5,6 @@
 + [官网教程](https://covariant.cn/install-covscript/)，包括：
   + covscript的安装方式
   + vscode下代码高亮环境的配置
-  + 
 <font color="red" size=18>注意注意！</font>
 
 + <font color = "red">当你面对某些代码运行不了，需要`import`的情况，请在确保网络通畅的情况下，在终端命令行中利用`cspkg`工具，按照命令提示下载</font>，具体实现为：
@@ -18,7 +17,7 @@ cspkg -i imgui
 cspkg -h
 ```
 查看帮助，了解`covscript`包管理的细节。
-
++ CSPKG包管理系统的细节请参考[CSPKG官方仓库](https://github.com/covscript/cspkg)
 ## cov必须知道的四个仓库以及连接
 ### 标准库wiki 
 + [标准库wiki](http://wiki.csman.info/reference.grammar)
@@ -40,6 +39,6 @@ cspkg -h
     + `chat_client.csc`是GUI实现的基础样例`chat_server.csc`是没有GUI的，但是想利用其实现聊天室需要这个进行服务，看一下就好。
     + `db_editor.csc`是数据库访问接口的实现，需要连接数据库的同学请在这里查询
 ### MGUI仓库，COVSCRIPT图形库的维护
-+ [cov-mgui test下有一些GUI样例](https://github.com/covscript/covscript-imgui/tree/master/tests)
++ [cov-mgui test文件夹下有一些GUI样例](https://github.com/covscript/covscript-imgui/tree/master/tests)
   + **<font color=red>初次学习gui应当多多研习本仓库下的样例和功能！</font>**
   + 可以从这里了解GUI各种接口的实现和用法
