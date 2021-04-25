@@ -36,6 +36,6 @@ while !app.is_closed()
         # 上面这个vec2是创建一个二维变量，（100,200），并将其作为参数传入set_window_size用以重设窗体大小。
         # 3.2.2.4中有关于窗口的所有性质，可以自行尝试
         end_window()
-        结束本窗口
+        # 结束本窗口
         app.render()
 end
