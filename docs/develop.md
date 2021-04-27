@@ -36,11 +36,11 @@ CREATE TABLE propertys(
 用于生成每一个地点的位置和唯一的id用于字段间引用
 ```sql
 CREATE TABLE places(
-    UUID char(12)
+    UUID char(12),
     dd_first char(10),
     dd_second char(10),
     dd_third int,
-    dd_fourth char(10),
+    dd_fourth char(10)
 )
 ```
 + first为校区
@@ -60,7 +60,7 @@ CREATE TABLE move_places(
 保存了每一次移动的物品id，初始地点，去向，以及移动时间
 ### 故障信息表
 ```sql
-CREATE TABLE move_places(
+CREATE TABLE broken(
     item_id char(12),
     broke_time date,
     reason varchar(200),
