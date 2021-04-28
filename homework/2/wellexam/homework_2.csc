@@ -63,4 +63,3 @@ while !app.is_closed()
         pop_font()
     app.render()
 end
-
