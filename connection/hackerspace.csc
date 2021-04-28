@@ -1,5 +1,5 @@
 import csdbc_mysql
-import hackerspace
+import db
 
-hackerspace.csdbc_adpter = csdbc_mysql.connect("./db_config.json")
-hackerspace.start()
+db.csdbc_adpter = csdbc_mysql.connect("./db_config.json")
+db.start()

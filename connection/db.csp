@@ -1,6 +1,6 @@
 import csdbc_mysql, imgui,imgui_font
 using imgui
-package hackerspace
+package db
 
 var csdbc_adpter = null 
 
