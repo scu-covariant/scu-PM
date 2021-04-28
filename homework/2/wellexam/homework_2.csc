@@ -9,30 +9,20 @@ var app=window_application(0.5*imgui.get_monitor_width(0),0.5*imgui.get_monitor_
 var font=add_font_extend_cn(imgui_font.source_han_sans, 50)
 set_font_scale(2)
 
-var account = "", passwd = "", flag = true, feedback = "", check_if = false
+var account = "", passwd = "", flag = true, feedback = "", check_if = false, count = 0
 
 function check()
+    count++
     var check_window=true
-    flag = db.login(account,passwd)
-    switch flag
-        case 0
-            feedback = "恭喜，登陆成功！"
-        end
-        case 1
-            feedback = "用户名不存在"
-        end
-        case 2
-            feedback = "密码错误！"
-        end
-    end
     begin_window("提示",check_window,{flags.always_auto_resize,flags.no_collapse})
-        set_window_pos(vec2(app.get_window_width()/2,app.get_window_height()/2))
+        set_window_pos(vec2(app.get_window_width()/4,app.get_window_height()/4+100))
         set_window_size(vec2(app.get_window_width(),app.get_window_height()))
         text(feedback)
         spacing()
-        if button("确定") || is_key_pressed(to_integer('Y'))
+        if button("确定") || (count >= 20 && is_key_pressed(get_key_index(keys.enter)))
             check_window = false
             check_if = false
+            count = 0
         end
     end_window()
 end
@@ -53,6 +43,18 @@ while !app.is_closed()
             separator()
             if button("登录") || is_key_pressed(get_key_index(keys.enter))
                 check_if = true
+                flag = db.login(account,passwd)
+                switch flag
+                    case 0
+                        feedback = "恭喜，登陆成功！"
+                    end
+                    case 1
+                        feedback = "用户名不存在"
+                    end
+                    case 2
+                        feedback = "密码错误！"
+                    end
+                end
             end
             if check_if
                 check()
