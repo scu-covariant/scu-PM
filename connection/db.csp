@@ -7,13 +7,15 @@ var csdbc_adpter = null
 struct database
     function main()
         var db = csdbc_adpter
-        var result = db.exec("select * from testtb")
-        foreach i in result
-            foreach j in i
-                system.out.print(j.data+' ')
-            end
-            system.out.println("")
-        end     
+        if db != null
+            var result = db.exec("select * from testtb")
+            foreach i in result
+                foreach j in i
+                    system.out.print(j.data+' ')
+                end
+                system.out.println("")
+            end     
+        end
     end
 end
 function start()
