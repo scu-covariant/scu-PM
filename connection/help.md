@@ -1,4 +1,8 @@
 # 数据库连接范例
++ 本文件夹下三个文件代表三种连接方式
++ `1sqlite.csc`利用sqlite连接到本文件夹下`PM.db`
++ `2remotedb_connect.csc`连接到公网服务器
++ `3hackerspace.csc`在协会`hackerspace`网络环境下进行连接
 ## 文件夹目录
 + `db.csp`是数据库的基本实现，需要外界提供`adapter`以完成数据库连接。
 + `sqlite.csc`是以sqlite协议连接本文件夹下的`PM.db`文件的脚本
