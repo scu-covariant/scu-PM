@@ -1,0 +1,10 @@
+import imgui
+using imgui
+package hello
+function generate(window_opened)
+    begin_window("测试窗体",window_opened,{})
+    text("你好世界")
+    set_window_size(vec2(150,200))
+    end_window()
+end
+# 可以更加自由的自定义窗口，比如通过函数的形参列表传入窗体的名字，以渲染外形相同的多个窗体，以达到复用函数的效果。
