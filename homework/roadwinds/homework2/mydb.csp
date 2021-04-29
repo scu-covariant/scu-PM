@@ -1,0 +1,12 @@
+package mydb
+function login(name,pass)
+    if name != "roadwinds"
+        return 1
+    else
+        if pass == "00000000"
+            return 0
+        else
+            return 2
+        end
+    end
+end
