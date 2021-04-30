@@ -12,6 +12,8 @@
 # （必看）使用connecting string连接协会外网数据库
 + 这个方法相对简单且较为完善，如果不深入研究只是为了开发本系统，**只使用本方法即可**
 ## 连接方法
++ **安装驱动程序！！之前忘写了！很抱歉！！！**  
+  + 下载连接`Maria-DB`的拓展，并按要求安装[【官方connector】](https://downloads.mariadb.com/Connectors/odbc/connector-odbc-3.0.2/)
 + 请在需要开展连接的脚本的同一目录下创建`login_config.json`文件，因为包含密码IP等信息，具体格式参见qq群，仅限内部使用。
 + 执行脚本即可，本例中即为`2remotedb_connect.csc`，有完善的异常处理功能，后期可能会转换为GUI界面。
 + 按照`csdbc`的wiki更改`db.csp`内的具体函数，SQL语句即可进行不同的数据库操作。
