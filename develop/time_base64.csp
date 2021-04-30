@@ -38,10 +38,10 @@ import codec.json as json
 
 
 namespace config
-    var       mons = {"一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"}
-    var       days = {"星期天", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"}
+    var mons = {"一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"}
+    var days = {"星期天", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"}
 end
-
+# 用于拼接对齐
 function align(str)
     if str.size == 1
         return "0" + str
@@ -50,16 +50,16 @@ function align(str)
     end
 end
 
-function get_time_str(t)
-    var hour = null
-    if t.hour < 13
-        hour = " 上午 " + align(to_string(t.hour))
-    else
-        hour = " 下午 " + align(to_string(t.hour - 12))
-    end
-    return to_string(t.year + 1900) + "年" + config.mons[t.mon] + to_string(t.mday) + "日 " + config.days[t.wday] + align(hour) + ":" + align(to_string(t.min)) + ":" + align(to_string(t.sec))
-end
-
+# function get_time_str(t)
+#     var hour = null
+#     if t.hour < 13
+#         hour = " 上午 " + align(to_string(t.hour))
+#     else
+#         hour = " 下午 " + align(to_string(t.hour - 12))
+#     end
+#     return to_string(t.year + 1900) + "年" + config.mons[t.mon] + to_string(t.mday) + "日 " + config.days[t.wday] + align(hour) + ":" + align(to_string(t.min)) + ":" + align(to_string(t.sec))
+# end
+# 将时间转换为时间戳
 function to_timestamp(t)
 @begin
     return base64.encode(json.to_string(json.from_var({
@@ -71,11 +71,11 @@ function to_timestamp(t)
     }.to_hash_map())))
 @end
 end
-
+#从时间戳切换到hash_map变量
 function from_timestamp(t)
     return json.to_var(json.from_string(base64.decode(t)))
 end
-
+# 时间戳（base码）到字符串
 function timestamp2string(t)
     var ts = from_timestamp(t)
     var hour = null
@@ -85,4 +85,12 @@ function timestamp2string(t)
         hour = " 下午 " + align(to_string(ts.hour - 12))
     end
     return to_string(ts.year + 1900)+ "年"+ to_string(ts.mon) + "月" + to_string(ts.day)+"日"+ align(hour) + " 时 " + align(to_string(ts.min)) + " 分" 
+end
+
+function get_local_timestamp()
+    return to_timestamp(runtime.local_time())
+end
+
+function get_utc_timestamp()
+    return to_timestamp(runtime.utc_time())
 end
