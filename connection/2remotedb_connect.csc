@@ -27,6 +27,11 @@ function Remotedb_connect_str(connect)
             if !res.empty()
                 system.out.println("【ERROR】访问超时！请检查目标服务器地址或服务器运行情况！")
             end
+            reg = regex.build("IM00")
+            res = reg.search(e.what)
+            if !res.empty()
+                system.out.println("【ERROR】您未安装数据库驱动程序！！！\n请在该链接下安装：https://downloads.mariadb.com/Connectors/odbc/connector-odbc-3.0.2/")
+            end
             ########## 异常处理结束 ##############
         end
         db.start()
