@@ -7,31 +7,33 @@
 ```sql
 CREATE TABLE propertys(
     uuid char(12),
-    sbmc int,
-    ggxh char(20),
-    pp char(20),
+    eq_name int,
+    eq_type char(20),
+    brand char(20),
     wbdw char(40),
-    qysj date,
-    zbqx int,
+    start_time char(128),
+    time_limit int,
     sfjz int,
-    sfkby int,
-    dqdd char(12), 
-    zt char(1)
+    is_available int,
+    local_place char(12),
+    manager char(12) 
+    signal char(1)
 )
 ```
 最后一项是“当前地点”。
 (注意这里面没有地点相关的信息和故障信息，分别存放在地点表和故障表)
 `uuid`唯一id，
-`sbmc`设备名称，
-`ggxh`规格型号，
-`pp`品牌，
+`eq_name`设备名称，
+`eq_type`规格型号，
+`brand`品牌，
 `wbdw`维保单位，
 `qysj`启用时间，
-`zbqx`质保期限，以年为单位，
+`time_limit`质保期限，以年为单位，
 `sfjz`是否建账，是或否。
-`sfkby`是否可备用，默认为不可备用，可以选择可备用。
-`dqdd`当前地点，对应的是地点表中的`UUID`。
-`zt`为状态，代表当前物品的状态情况，包含`1 待审核`，`2 正常使用`，`3 故障待维修`，`4 正在变动地点`，`9 报废`
+`is_available`是否可备用，默认为不可备用，可以选择可备用。
+`local_place`当前地点，对应的是地点表中的`UUID`。
+`manager`小组管理者，uuid
+`signal`为状态，代表当前物品的状态情况，包含`1 待审核`，`2 正常使用`，`3 故障待维修`，`4 正在变动地点`，`9 报废`
 ### 地点表
 用于生成每一个地点的位置和唯一的id用于字段间引用
 ```sql
@@ -54,18 +56,22 @@ CREATE TABLE move_places(
     item_id char(12),
     from_place char(12),
     to_place char(12),
-    move_time date
+    requester char(12),
+    commiter char(12),
+    req_time char(128),
+    com_time char(128)
 )
 ```
-保存了每一次移动的物品id，初始地点，去向，以及移动时间
+保存了每一次移动的物品id，初始地点，去向，以及请求时间，受理时间。
 ### 故障信息表
 ```sql
 CREATE TABLE broken(
+    id
     item_id char(12),
-    broke_time date,
-    reason varchar(200),
-    repair_time date,
-    repair_method varchar(200)
+    broke_time varchar(255),
+    reason varchar(255),
+    repair_time varchar(255),
+    repair_method varchar(255),
 )
 ```
 保存了故障信息，
@@ -73,11 +79,11 @@ CREATE TABLE broken(
 ```sql
 CREATE TABLE request_tb(
     id char(12),
-    send_who char(20),
-    to_who char(20),
-    type_of_msg int,
-    status_now int,
-    msg_ID char(12)
+    item_id char(12),
+    requester char(12),
+    commiter char(12),
+    signal int
+    
 )
 ```
 + ID是信息的唯一ID，递增
@@ -86,6 +92,10 @@ CREATE TABLE request_tb(
 + type_of_msg是记录该消息需要查找的表的内容。
 + status_now记录了这个消息是否结束
 + msg_ID记录的是在对应表中，需要查找的信息的ID。
++ 申请是否结束。
+### 用户表
+xxxxx
+
 ## 前端实现
 ### 登录界面
 + 无论哪个前端，均需要一个登录界面与数据库沟通，获取访问权限。
