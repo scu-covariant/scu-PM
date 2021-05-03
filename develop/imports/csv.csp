@@ -1,0 +1,109 @@
+package csv
+
+function read_csv(path,index,values)
+    var temp = ""           #临时字符串容器
+    var sub = -1            #字符串下标
+    var file = iostream.ifstream(path)
+    #检查读取文件是否成功
+    if !iostream.istream.good(file)
+        return -2
+    end
+    temp = iostream.istream.getline(file)
+    #检测到文件中有英文双引号，原内容中可能包含英文双引号或英文逗号，清空数组内容并报错退出
+    if string.find(temp, "\"", 0) != -1
+        array.clear(index)
+        return -1
+    end
+    #处理串首的空字段
+    if string.find(temp, ",", 0) == 0
+        string.insert(temp,0,"null")
+    end
+    #处理串尾的空字段
+    if temp[-1]==','
+        string.append(temp,"null")
+    end
+    #处理串中的空字段
+    sub = string.find(temp, ",,", 0)
+    while sub != -1
+        string.insert(temp,sub+1,"null")
+        sub = string.find(temp, ",,", 0)
+    end
+    #按英文逗号分隔
+    index = string.split(temp, {','})
+    temp = iostream.istream.getline(file)
+    var i = 0
+    while !string.empty(temp)
+        #检测到文件中有英文双引号，原内容中可能包含英文双引号或英文逗号，清空数组内容并报错退出
+        if string.find(temp, "\"", 0) != -1
+            array.clear(index)
+            array.clear(values)
+            return -1
+        end
+        #处理串首的空字段
+        if string.find(temp, ",", 0) == 0
+            string.insert(temp,0,"null")
+        end
+        #处理串尾的空字段
+        if temp[-1]==','
+            string.append(temp,"null")
+        end
+        #处理串中的空字段
+        sub = string.find(temp, ",,", 0)
+        while sub != -1
+            string.insert(temp,sub+1,"null")
+            sub = string.find(temp, ",,", 0)
+        end
+        values[i] = string.split(temp, {','})
+        i++
+        string.clear(temp)
+        temp = iostream.istream.getline(file)
+    end
+    return 0
+end
+
+function write_csv(path,index,values)
+    var temp = "", count = 1, size = 0
+    var file = iostream.ofstream(path)
+    #写入时判断空字段和在串尾的空字段的情况
+    size = array.size(index)
+    foreach it in index
+        if it != "null"
+            if count < size
+                iostream.ostream.print(file,it+',')
+                count++
+            else
+                iostream.ostream.print(file,it)
+                count++
+            end
+        else
+            if count < size
+                iostream.ostream.print(file,',')
+                count++
+            end
+        end
+    end
+    iostream.ostream.print(file,'\n')
+    foreach it in values
+        size = array.size(it)
+        count = 1
+        #写入时判断空字段和在串尾的空字段的情况
+        foreach value in it
+            if value != "null"
+                if count < size
+                    iostream.ostream.print(file,value+',')
+                    count++
+                else
+                    iostream.ostream.print(file,value)
+                    count++
+                end
+            else
+                if count < size
+                    iostream.ostream.print(file,',')
+                    count++
+                end
+            end
+        end
+        iostream.ostream.print(file,'\n')
+    end
+    return 0
+end
