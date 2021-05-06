@@ -37,7 +37,8 @@ var res = db.exec("select 学号,姓名,性别 from teststu where 性别=\""+ in
 foreach i in res
     foreach j in i
         if j.data!=null
-            system.out.print(j.data + " ")        
+            system.out.print(j.data + " ")
+            # 返回的数据是一个记录类，由 [string] name，type，data，sql_style 构成
         end
     end
     system.out.println("")
@@ -84,3 +85,10 @@ db.just_exec("UPDATE testtb SET 性别='男' where 专业='cs'")
 testtb_out()
 p("==========完成数据库修改========")
 #======================= 改 =======================
+
+# 最后一个没用的函数
+var columns = db.column_info("testtb")
+foreach i in columns
+    p(i.name +  " " + i.type)
+end
+# 这个函数返回参数内表格的所有的列信息，可以用name type进行访问
