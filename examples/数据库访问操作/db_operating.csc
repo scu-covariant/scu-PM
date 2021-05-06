@@ -60,13 +60,16 @@ function add(name,mayjor,gender)
     # just_exec是立即执行，没有返回值，而exec是有返回值的，一般用于查询
 end
 # 其他的所有语句也可以这样进行绑定操作，简化流程
-add("李言荣","chemistry","男")
+add("Avogadro","chemistry","男")
 #======================= 增 =======================
 p("=====添加后的结果：=====")
 testtb_out() # 查看添加结果
 #======================= 删 =======================
 p("$删除刚才添加的信息：")
-db.just_exec("DELETE FROM testtb WHERE 姓名='李言荣'")
+db.just_exec("DELETE FROM testtb WHERE 姓名='Avogadro'")
+# 下面这个sql会保证自增语句始终从最小的，未被选中的值开始自增ID，否则每次执行虽然Avogadro都被删掉，但是最后还是会会从被删掉的ID开始自增，导致自增值不断变大。
+db.just_exec("ALTER TABLE testtb AUTO_INCREMENT = 1")
+
 # delete语句会删除所有符合条件的记录，进阶操作方法请进一步了解sql语句
 # 建议在设计的时候一定where后面跟的是查询主键（即唯一ID）防止误删
 #======================= 删 =======================
