@@ -1,0 +1,31 @@
+package view_repair
+
+import imgui
+import csdbc_mysql
+
+using system
+using imgui
+function view_all_items(manager_id)
+    #作用：查看某个管理员管辖的所有物品
+    #按钮触发 gui界面长期存在
+end
+function select_with_id(property_id)
+    #作用：根据物品id进行搜索
+end
+function select_with_signal(property_signal)
+    #作用：根据物品signal进行搜索
+end
+function select_with_name(property_name)
+    #作用：根据物品name进行搜索
+end
+##以上搜索方式暂时保留 根据数据情况进行选择+优化
+##gui界面为常驻界面 按键更改画面内容
+
+function report_repair(manager_id)
+    #作用：进行报修填表
+    #构建一个gui弹窗 报修按钮触发 输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
+end
+function data_supply(manager_id)
+    #该函数作用为：工作完成后，补充维修相关信息
+    #构建一个gui弹窗（输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
+end
