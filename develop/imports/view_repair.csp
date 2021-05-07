@@ -5,6 +5,15 @@ import csdbc_mysql
 
 using system
 using imgui
+
+var select_way = {"按物资id查找","按物资状态查找","按物资名字查找"}
+var select_kind = 3
+var input_con = ""
+var w2_state = false
+var w3_state = false
+var w4_state = false
+
+
 function view_all_items(manager_id)
     #作用：查看某个管理员管辖的所有物品
     #按钮触发 gui界面长期存在
@@ -14,25 +23,99 @@ function view_all_items(manager_id)
         system.out.println("连接失败,程序终止！")
         system.exit(1)
     end
-    #"SELECT * FROM ITEM_DATA WHERE CODE=\"" + code + "\""
-    var res = db.exec("select * from propertys where manager=\"" + manager + "\"")
-    begin_window("测试窗体",window_opened,{})
+    
+
+    #db.just_exec("insert into propertys(eq_name, manager) values(\"a\",1)")
+    
+    #var stmt = db.prepare("insert into propertys(eq_name, manager) values(\"?\",1)")
+    #var name = "a"
+    #stmt.bind(0, name)
+    #stmt.just_exec()
+    
+    #var res = db.exec("select * from propertys where manager=\"" + manager_id + "\"")
+    #var p =1
+    #var res = db.exec("select * from propertys where manager=\"" + manager_id + "\"")
+    var res = db.exec("select * from testtb")
+
+    var window_opened = true
+    begin_window("view##w1",window_opened,{})
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
         text("你好世界")
-        set_window_size(vec2(150,200))
         foreach i in res
             var data_in_line = ""
             foreach j in i
-                data_in_line += j.data+' '
+                data_in_line += j.data + '\t'
             end
             text(data_in_line)
         end
-    end_window()
-    
+        
+        var c1 = combo_box("查找方式",select_kind,select_way)
 
+        var i1 = input_text("", input_con, 100)
+
+        var b1 = button("筛选")
+
+        if b1 && !input_con.empty()
+            switch select_kind
+                case 0
+                    w2_state = true
+                    text("0")
+                end
+                case 1
+                    w3_state = true
+                    text("1")
+                end
+                case 2
+                    w4_state = true
+                    text("2")
+                end
+            end
+        end
+
+        if(w2_state)
+            select_with_id(manager_id,input_con,w2_state)
+        end
+        if(w3_state)
+            select_with_id(manager_id,input_con,w3_state)
+        end
+        if(w4_state)
+            select_with_id(manager_id,input_con,w4_state)
+        end
+
+    
+    end_window()
 end
-function select_with_id(property_id)
+
+
+function select_with_id(manager_id,property_id,w2_state)
     #作用：根据物品id进行搜索
+    import db_connector
+    var db = db_connector.start()
+    if db == null
+        system.out.println("连接失败,程序终止！")
+        system.exit(1)
+    end
+
+    var res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and uuid=\"" + property_id + "\"")
+    var w2_is_open = true
+    begin_window("select_with_id##w2",w2_is_open,{})
+        foreach i in res
+            var data_in_line = ""
+            foreach j in i
+                data_in_line += j.data + ' '
+            end
+            text(data_in_line)
+        end
+
+        if button("exit##b2") || !w2_is_open
+            w2_state = false;
+        end
+    
+    end_window()   
 end
+
+
 function select_with_signal(property_signal)
     #作用：根据物品signal进行搜索
 end
