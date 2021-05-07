@@ -1,0 +1,145 @@
+package structs
+
+# 物品信息struct
+class property
+    var uuid = 0
+    var eq_name = ""
+    var eq_type = ""
+    var brand = ""
+    var wbdw = ""
+    var start_time = ""
+    var time_limit = 0
+    var sfjz = 0
+    var is_available = 0
+    var local_place = 0
+    var manager = 0
+    var signal = 0
+
+    var arr = new array
+
+    function initialize()
+    end
+
+    #遍历准备
+    function iter_prepare()
+        array.clear(arr)
+        arr.push_back(uuid)
+        arr.push_back(eq_name)
+        arr.push_back(eq_type)
+        arr.push_back(brand)
+        arr.push_back(wbdw)
+        arr.push_back(start_time)
+        arr.push_back(time_limit)
+        arr.push_back(sfjz)
+        arr.push_back(is_available)
+        arr.push_back(local_place)
+        arr.push_back(manager)
+        arr.push_back(signal)
+    end
+
+    function clear_arr()
+        array.clear(arr)
+    end
+
+    #遍历完成后赋值回类成员
+    function assign()
+        uuid = arr[0]
+        eq_name = arr[1]
+        eq_type = arr[2]
+        brand = arr[3]
+        wbdw = arr[4]
+        start_time = arr[5]
+        time_limit = arr[6]
+        sfjz = arr[7]
+        is_available = arr[8]
+        local_place = arr[9]
+        manager = arr[10]
+        signal = arr[11]
+        array.clear(arr)
+    end
+end
+
+# 地点信息struct
+class place
+    var uuid = 0
+    var group_admin = 0
+    var dd_first = ""
+    var dd_second = ""
+    var dd_third = 0
+    var dd_fourth = ""
+
+    var arr = new array  
+
+    function initialize()
+    end
+
+    #遍历准备
+    function iter_prepare()
+        array.clear(arr)
+        arr.push_back(uuid)
+        arr.push_back(group_admin)
+        arr.push_back(dd_first)
+        arr.push_back(dd_second)
+        arr.push_back(dd_third)
+        arr.push_back(dd_fourth)
+    end
+
+    #遍历完成后赋值回类成员
+    function assign()
+        uuid = arr[0]
+        group_admin = arr[1]
+        dd_first = arr[2]
+        dd_second = arr[3]
+        dd_third = arr[4]
+        dd_fourth = arr[5]
+        array.clear(arr)
+    end
+
+    function clear_arr()
+        array.clear(arr)
+    end
+end
+
+# 申请添加信息struct
+class request
+    var uuid = 0
+    var item_id = 0
+    var requester = 0
+    var commiter = 0
+    var signals = 0
+    var reason = ""
+    var request_time = ""
+
+    var arr = new array
+
+    function initialize()
+    end
+
+    #遍历准备
+    function iter_prepare()
+        array.clear(arr)
+        arr.push_back(uuid)
+        arr.push_back(item_id)
+        arr.push_back(requester)
+        arr.push_back(commiter)
+        arr.push_back(signals)
+        arr.push_back(reason)
+        arr.push_back(request_time)
+    end
+
+    #遍历完成后赋值回类成员
+    function assign()
+        uuid = arr[0]
+        item_id = arr[1]
+        requester = arr[2]
+        commiter = arr[3]
+        signals = arr[4]
+        reason = arr[5]
+        request_time = arr[6]
+        array.clear(arr)
+    end
+
+    function clear_arr()
+        array.clear(arr)
+    end
+end

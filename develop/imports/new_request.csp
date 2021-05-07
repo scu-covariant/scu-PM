@@ -1,0 +1,109 @@
+import csv
+import structs
+import db_connector
+
+package new_request
+
+function construct(arr, pro, pla, requ)
+    pro.eq_name = arr[0]
+    pro.eq_type = arr[1]
+    pro.brand = arr[2]
+    pro.wbdw = arr[3]
+    pro.time_limit = string.to_number(arr[4])
+    if arr[5] == "是"
+        pro.sfjz = 1
+    else
+        pro.sfjz = 0
+    end
+    if arr[6] == "是"
+        pro.is_available = 1
+    else
+        pro.is_available = 0
+    end
+
+    pla.dd_first = arr[7]
+    pla.dd_second = arr[8]
+    pla.dd_third = string.to_number(arr[9])
+    pla.dd_fourth = arr[10]
+
+    requ.reason = arr[11]
+
+    check_place(pla)
+end
+
+function check_csv(path, values)
+    var std = {"设备名称", "规格型号", "品牌", "维保单位", "质保期限", "是否建账", "是否可备用", "校区", "教学楼", "层数", "门牌号", "提交原因"}
+    var index = {}
+    var erro = csv.read_csv(path, index, values)
+    if erro != 0
+        if erro ==-1
+            system.out.print("文件内容中包含英文逗号或英文双引号。\n")
+            system.exit(1)
+        end
+        if erro == -2
+            system.out.print("读取文件时出错，请检查路径是否正确。\n")
+            system.exit(1)
+        end
+    end
+
+    if array.size(index) != 12
+        system.out.println("格式错误，表格应该为12列。")
+        system.exit(1)
+    end
+    var sub = 0
+    foreach i in index
+        if i != std[sub]
+            system.out.print("格式错误，第")
+            system.out.print(sub+1)
+            system.out.println("列表头错误！")
+            system.out.print("\"")
+            system.out.print(i)
+            system.out.print("\"")
+            system.out.print("应为\"")
+            system.out.print(std[sub])
+            system.out.println("\"")
+            system.exit(1)
+        end
+        sub++
+    end
+end
+
+function check_place(loc)
+    var db = db_connector.start()
+    var stmt = db.prepare("SELECT uuid FROM places WHERE group_admin=? AND dd_first=? AND dd_second=? AND dd_third=? AND dd_fourth=?")
+    stmt.bind(0,loc.group_admin)
+    stmt.bind(1,loc.dd_first)
+    stmt.bind(2,loc.dd_second)
+    stmt.bind(3,loc.dd_third)
+    stmt.bind(4,loc.dd_fourth)
+
+    var res = stmt.exec()
+    foreach i in res
+        foreach j in i
+            if j.data!=null
+                system.out.print(j.data + " ")
+                # 返回的数据是一个记录类，由 [string] name，type，data，sql_style 构成
+            end
+        end
+        system.out.println("")
+    end
+    if array.empty(res)
+        stmt = db.prepare("INSERT INTO places(group_admin,dd_first,dd_second,dd_third,dd_fourth) values(?,?,?,?,?)")
+        stmt.bind(0,loc.group_admin)
+        stmt.bind(1,loc.dd_first)
+        stmt.bind(2,loc.dd_second)
+        stmt.bind(3,loc.dd_third)
+        stmt.bind(4,loc.dd_fourth)
+        stmt.just_exec()
+        stmt = db.prepare("SELECT uuid FROM places WHERE group_admin=? AND dd_first=? AND dd_second=? AND dd_third=? AND dd_fourth=?")
+        stmt.bind(0,loc.group_admin)
+        stmt.bind(1,loc.dd_first)
+        stmt.bind(2,loc.dd_second)
+        stmt.bind(3,loc.dd_third)
+        stmt.bind(4,loc.dd_fourth)
+        res = stmt.exec()
+        loc.uuid = res[0][0].data
+    else
+        loc.uuid = res[0][0].data
+    end
+end
