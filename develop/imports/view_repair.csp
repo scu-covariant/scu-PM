@@ -8,6 +8,27 @@ using imgui
 function view_all_items(manager_id)
     #作用：查看某个管理员管辖的所有物品
     #按钮触发 gui界面长期存在
+    import db_connector
+    var db = db_connector.start()
+    if db == null
+        system.out.println("连接失败,程序终止！")
+        system.exit(1)
+    end
+    #"SELECT * FROM ITEM_DATA WHERE CODE=\"" + code + "\""
+    var res = db.exec("select * from propertys where manager=\"" + manager + "\"")
+    begin_window("测试窗体",window_opened,{})
+        text("你好世界")
+        set_window_size(vec2(150,200))
+        foreach i in res
+            var data_in_line = ""
+            foreach j in i
+                data_in_line += j.data+' '
+            end
+            text(data_in_line)
+        end
+    end_window()
+    
+
 end
 function select_with_id(property_id)
     #作用：根据物品id进行搜索
