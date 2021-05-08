@@ -5,7 +5,16 @@ import time_base64
 
 package new_request
 
+<<<<<<< Updated upstream
 function single_insert(arr, pro, pla, req, group_admin)
+=======
+#单条录入函数，传入一条要录入的条目数组以及管理员id。
+#================注意：该函数每次调用必须间隔至少一秒钟，否则将导致时间戳冲突从而造成申请表中的item_id混乱！！！================
+function single_insert(arr, group_admin)
+    var pro = new structs.property
+    var pla = new structs.place
+    var req = new structs.request
+>>>>>>> Stashed changes
     pro.eq_name = arr[0]
     pro.eq_type = arr[1]
     pro.brand = arr[2]
@@ -22,6 +31,10 @@ function single_insert(arr, pro, pla, req, group_admin)
         pro.is_available = 0
     end
     pro.signal = 1
+<<<<<<< Updated upstream
+=======
+    pro.manager = group_admin
+>>>>>>> Stashed changes
 
     pla.dd_first = arr[7]
     pla.dd_second = arr[8]
@@ -31,7 +44,10 @@ function single_insert(arr, pro, pla, req, group_admin)
     check_place(pla)
 
     pro.local_place = pla.uuid
+<<<<<<< Updated upstream
     pro.manager = group_admin
+=======
+>>>>>>> Stashed changes
 
     req.requester = group_admin
     req.signals = 1
@@ -47,8 +63,75 @@ function single_insert(arr, pro, pla, req, group_admin)
     req.item_id = pro.uuid
 
     add_req(req)
+<<<<<<< Updated upstream
 end
 
+=======
+
+    # 打印录入的结构体
+    # show(pro, pla, req)
+end
+
+# 批量录入函数，传入一个包含多条信息的二维数组以及管理员id。
+function multi_insert(values, group_admin)
+    var timestamp = time_base64.to_timestamp(runtime.local_time())
+    var requests = new array
+    foreach arr in values
+        var pro = new structs.property
+        var pla = new structs.place
+        var req = new structs.request
+        pro.eq_name = arr[0]
+        pro.eq_type = arr[1]
+        pro.brand = arr[2]
+        pro.wbdw = arr[3]
+        pro.time_limit = string.to_number(arr[4])
+        if arr[5] == "是"
+            pro.sfjz = 1
+        else
+            pro.sfjz = 0
+        end
+        if arr[6] == "是"
+            pro.is_available = 1
+        else
+            pro.is_available = 0
+        end
+        pro.signal = 1
+        pro.manager = group_admin
+
+        pla.dd_first = arr[7]
+        pla.dd_second = arr[8]
+        pla.dd_third = string.to_number(arr[9])
+        pla.dd_fourth = arr[10]
+
+        check_place(pla)
+
+        pro.local_place = pla.uuid
+
+        req.requester = group_admin
+        req.signals = 1
+        req.reason = arr[11]
+        req.request_time = timestamp
+
+        pro.start_time = req.request_time
+
+        add_pro(pro)
+
+        requests.push_back(req)
+    end
+
+    var uuids = get_uuid_multi(group_admin, timestamp)
+
+    var count = 0
+    foreach req in requests
+        req.item_id = uuids[count][0].data
+        add_req(req)
+        count++
+    end
+end
+
+# 封装了异常处理和索引格式检查的csv读取函数，传入文件路径和用于存储纯条目信息的空二维数组（注：不返回索引）。
+# gui设计时可重写该函数以适应图形化异常处理。
+>>>>>>> Stashed changes
 function check_csv(path, values)
     var std = {"设备名称", "规格型号", "品牌", "维保单位", "质保期限", "是否建账", "是否可备用", "校区", "教学楼", "层数", "门牌号", "提交原因"}
     var index = {}
@@ -86,6 +169,10 @@ function check_csv(path, values)
     end
 end
 
+<<<<<<< Updated upstream
+=======
+# 以下函数为数据库交互函数，切勿贸然直接调用，请使用经过封装的录入函数。
+>>>>>>> Stashed changes
 function check_place(loc)
     var db = db_connector.start()
     db.just_exec("ALTER TABLE places AUTO_INCREMENT = 1")
@@ -148,4 +235,35 @@ function get_uuid_single(item)
     stmt.bind(1,item.start_time)
     var res = stmt.exec()
     item.uuid = res[0][0].data
+<<<<<<< Updated upstream
+=======
+end
+
+function get_uuid_multi(group_admin, timestamp)
+    var db = db_connector.start()
+    var stmt = db.prepare("SELECT uuid FROM propertys WHERE manager = ? AND start_time = ?")
+    stmt.bind(0,group_admin)
+    stmt.bind(1,timestamp)
+    var res = stmt.exec()
+    return res
+end
+
+function show(pro, pla, req)
+    pro.iter_prepare()
+    pla.iter_prepare()
+    req.iter_prepare()
+    foreach i in pro.arr
+        system.out.print(i)
+        system.out.print(" ")
+    end
+    foreach i in pla.arr
+        system.out.print(i)
+        system.out.print(" ")
+    end
+    foreach i in req.arr
+        system.out.print(i)
+        system.out.print(" ")
+    end
+    system.out.print("\n")
+>>>>>>> Stashed changes
 end
