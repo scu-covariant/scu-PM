@@ -18,15 +18,4 @@ if erro != 0
     end
 end
 
-if array.size(index) != 12
-    system.out.println("格式错误")
-    system.exit(1)
-end
-var sub = 0
-foreach i in index
-    if i != std[sub]
-        system.out.println("格式错误")
-        system.exit(1)
-    end
-    sub++
-end
+csv.output_std_csv("standard_csv.csv")
