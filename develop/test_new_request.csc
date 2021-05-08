@@ -3,8 +3,8 @@ import structs
 import db_connector
 import new_request
 
-# var db = db_connector.start()
 var values = {{}}
+var group_admin = 46
 
 new_request.check_csv("data.csv", values)
 
@@ -15,11 +15,17 @@ var a = new array
 var b = new array
 var c = new array
 
+# var db = db_connector.start()
+# db.exec("DELETE FROM places;")
+# db.exec("DELETE FROM propertys;")
+# db.exec("DELETE FROM request_tb;")
+
 foreach i in values
-    new_request.construct(i, prop, plac, requ)
+    new_request.single_insert(i, prop, plac, requ, group_admin)
     a.push_back(prop)
     b.push_back(plac)
     c.push_back(requ)
+    # runtime.delay(1000)
 end
 
 var count = 0
@@ -46,4 +52,5 @@ foreach p in a
         system.out.print(" ")
     end
     system.out.print("\n")
+    count++
 end

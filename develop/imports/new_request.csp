@@ -1,10 +1,11 @@
 import csv
 import structs
 import db_connector
+import time_base64
 
 package new_request
 
-function construct(arr, pro, pla, requ)
+function single_insert(arr, pro, pla, req, group_admin)
     pro.eq_name = arr[0]
     pro.eq_type = arr[1]
     pro.brand = arr[2]
@@ -20,15 +21,32 @@ function construct(arr, pro, pla, requ)
     else
         pro.is_available = 0
     end
+    pro.signal = 1
 
     pla.dd_first = arr[7]
     pla.dd_second = arr[8]
     pla.dd_third = string.to_number(arr[9])
     pla.dd_fourth = arr[10]
 
-    requ.reason = arr[11]
-
     check_place(pla)
+
+    pro.local_place = pla.uuid
+    pro.manager = group_admin
+
+    req.requester = group_admin
+    req.signals = 1
+    req.reason = arr[11]
+    req.request_time = time_base64.to_timestamp(runtime.local_time())
+
+    pro.start_time = req.request_time
+
+    add_pro(pro)
+
+    get_uuid_single(pro)
+
+    req.item_id = pro.uuid
+
+    add_req(req)
 end
 
 function check_csv(path, values)
@@ -70,23 +88,14 @@ end
 
 function check_place(loc)
     var db = db_connector.start()
+    db.just_exec("ALTER TABLE places AUTO_INCREMENT = 1")
     var stmt = db.prepare("SELECT uuid FROM places WHERE group_admin=? AND dd_first=? AND dd_second=? AND dd_third=? AND dd_fourth=?")
     stmt.bind(0,loc.group_admin)
     stmt.bind(1,loc.dd_first)
     stmt.bind(2,loc.dd_second)
     stmt.bind(3,loc.dd_third)
     stmt.bind(4,loc.dd_fourth)
-
     var res = stmt.exec()
-    foreach i in res
-        foreach j in i
-            if j.data!=null
-                system.out.print(j.data + " ")
-                # 返回的数据是一个记录类，由 [string] name，type，data，sql_style 构成
-            end
-        end
-        system.out.println("")
-    end
     if array.empty(res)
         stmt = db.prepare("INSERT INTO places(group_admin,dd_first,dd_second,dd_third,dd_fourth) values(?,?,?,?,?)")
         stmt.bind(0,loc.group_admin)
@@ -106,4 +115,37 @@ function check_place(loc)
     else
         loc.uuid = res[0][0].data
     end
+end
+
+function add_pro(item)
+    var db = db_connector.start()
+    db.just_exec("ALTER TABLE propertys AUTO_INCREMENT = 1")
+    var stmt = db.prepare("INSERT INTO propertys(eq_name,eq_type,brand,wbdw,start_time,time_limit,sfjz,is_available,local_place,manager,signals) values(?,?,?,?,?,?,?,?,?,?,?)")
+    item.iter_prepare()
+    foreach i in range(1,12)
+        stmt.bind(i-1, item.arr[i])
+    end
+    item.clear_arr()
+    stmt.just_exec()
+end
+
+function add_req(info)
+    var db = db_connector.start()
+    db.just_exec("ALTER TABLE request_tb AUTO_INCREMENT = 1")
+    var stmt = db.prepare("INSERT INTO request_tb(item_id,requester,commiter,signals,reason,request_time) values(?,?,?,?,?,?)")
+    info.iter_prepare()
+    foreach i in range(1,7)
+        stmt.bind(i-1, info.arr[i])
+    end
+    info.clear_arr()
+    stmt.just_exec()
+end
+
+function get_uuid_single(item)
+    var db = db_connector.start()
+    var stmt = db.prepare("SELECT uuid FROM propertys WHERE manager = ? AND start_time = ?")
+    stmt.bind(0,item.manager)
+    stmt.bind(1,item.start_time)
+    var res = stmt.exec()
+    item.uuid = res[0][0].data
 end

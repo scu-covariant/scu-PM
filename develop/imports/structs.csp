@@ -14,6 +14,8 @@ class property
     var local_place = 0
     var manager = 0
     var signal = 0
+    # var db_name = "propertys"
+    # var time = ""
 
     var arr = new array
 
@@ -57,6 +59,10 @@ class property
         signal = arr[11]
         array.clear(arr)
     end
+
+    # function get_uuid_prepare()
+    #     time = start_time
+    # end
 end
 
 # 地点信息struct
@@ -67,6 +73,7 @@ class place
     var dd_second = ""
     var dd_third = 0
     var dd_fourth = ""
+    var db_name = "places"
 
     var arr = new array  
 
@@ -109,6 +116,8 @@ class request
     var signals = 0
     var reason = ""
     var request_time = ""
+    # var db_name = "request_tb"
+    # var time = ""
 
     var arr = new array
 
@@ -138,6 +147,10 @@ class request
         request_time = arr[6]
         array.clear(arr)
     end
+
+    # function get_uuid_prepare()
+    #     time = request_time
+    # end
 
     function clear_arr()
         array.clear(arr)
