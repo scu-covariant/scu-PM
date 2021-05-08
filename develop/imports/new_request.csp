@@ -5,16 +5,12 @@ import time_base64
 
 package new_request
 
-<<<<<<< Updated upstream
-function single_insert(arr, pro, pla, req, group_admin)
-=======
 #单条录入函数，传入一条要录入的条目数组以及管理员id。
 #================注意：该函数每次调用必须间隔至少一秒钟，否则将导致时间戳冲突从而造成申请表中的item_id混乱！！！================
 function single_insert(arr, group_admin)
     var pro = new structs.property
     var pla = new structs.place
     var req = new structs.request
->>>>>>> Stashed changes
     pro.eq_name = arr[0]
     pro.eq_type = arr[1]
     pro.brand = arr[2]
@@ -31,10 +27,7 @@ function single_insert(arr, group_admin)
         pro.is_available = 0
     end
     pro.signal = 1
-<<<<<<< Updated upstream
-=======
     pro.manager = group_admin
->>>>>>> Stashed changes
 
     pla.dd_first = arr[7]
     pla.dd_second = arr[8]
@@ -44,10 +37,6 @@ function single_insert(arr, group_admin)
     check_place(pla)
 
     pro.local_place = pla.uuid
-<<<<<<< Updated upstream
-    pro.manager = group_admin
-=======
->>>>>>> Stashed changes
 
     req.requester = group_admin
     req.signals = 1
@@ -63,10 +52,6 @@ function single_insert(arr, group_admin)
     req.item_id = pro.uuid
 
     add_req(req)
-<<<<<<< Updated upstream
-end
-
-=======
 
     # 打印录入的结构体
     # show(pro, pla, req)
@@ -131,7 +116,6 @@ end
 
 # 封装了异常处理和索引格式检查的csv读取函数，传入文件路径和用于存储纯条目信息的空二维数组（注：不返回索引）。
 # gui设计时可重写该函数以适应图形化异常处理。
->>>>>>> Stashed changes
 function check_csv(path, values)
     var std = {"设备名称", "规格型号", "品牌", "维保单位", "质保期限", "是否建账", "是否可备用", "校区", "教学楼", "层数", "门牌号", "提交原因"}
     var index = {}
@@ -169,10 +153,7 @@ function check_csv(path, values)
     end
 end
 
-<<<<<<< Updated upstream
-=======
 # 以下函数为数据库交互函数，切勿贸然直接调用，请使用经过封装的录入函数。
->>>>>>> Stashed changes
 function check_place(loc)
     var db = db_connector.start()
     db.just_exec("ALTER TABLE places AUTO_INCREMENT = 1")
@@ -235,8 +216,6 @@ function get_uuid_single(item)
     stmt.bind(1,item.start_time)
     var res = stmt.exec()
     item.uuid = res[0][0].data
-<<<<<<< Updated upstream
-=======
 end
 
 function get_uuid_multi(group_admin, timestamp)
@@ -265,5 +244,4 @@ function show(pro, pla, req)
         system.out.print(" ")
     end
     system.out.print("\n")
->>>>>>> Stashed changes
 end
