@@ -14,15 +14,13 @@ class property
     var local_place = 0
     var manager = 0
     var signal = 0
-    # var db_name = "propertys"
-    # var time = ""
 
     var arr = new array
 
     function initialize()
     end
 
-    #遍历准备
+    # 遍历准备
     function iter_prepare()
         array.clear(arr)
         arr.push_back(uuid)
@@ -39,11 +37,7 @@ class property
         arr.push_back(signal)
     end
 
-    function clear_arr()
-        array.clear(arr)
-    end
-
-    #遍历完成后赋值回类成员
+    # 遍历完成后赋值回类成员
     function assign()
         uuid = arr[0]
         eq_name = arr[1]
@@ -60,9 +54,9 @@ class property
         array.clear(arr)
     end
 
-    # function get_uuid_prepare()
-    #     time = start_time
-    # end
+    function clear_arr()
+        array.clear(arr)
+    end
 end
 
 # 地点信息struct
@@ -80,7 +74,7 @@ class place
     function initialize()
     end
 
-    #遍历准备
+    # 遍历准备
     function iter_prepare()
         array.clear(arr)
         arr.push_back(uuid)
@@ -91,7 +85,7 @@ class place
         arr.push_back(dd_fourth)
     end
 
-    #遍历完成后赋值回类成员
+    # 遍历完成后赋值回类成员
     function assign()
         uuid = arr[0]
         group_admin = arr[1]
@@ -116,15 +110,13 @@ class request
     var signals = 0
     var reason = ""
     var request_time = ""
-    # var db_name = "request_tb"
-    # var time = ""
 
     var arr = new array
 
     function initialize()
     end
 
-    #遍历准备
+    # 遍历准备
     function iter_prepare()
         array.clear(arr)
         arr.push_back(uuid)
@@ -136,7 +128,7 @@ class request
         arr.push_back(request_time)
     end
 
-    #遍历完成后赋值回类成员
+    # 遍历完成后赋值回类成员
     function assign()
         uuid = arr[0]
         item_id = arr[1]
@@ -147,10 +139,6 @@ class request
         request_time = arr[6]
         array.clear(arr)
     end
-
-    # function get_uuid_prepare()
-    #     time = request_time
-    # end
 
     function clear_arr()
         array.clear(arr)

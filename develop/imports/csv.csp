@@ -107,3 +107,14 @@ function write_csv(path,index,values)
     end
     return 0
 end
+
+function output_std_csv(path)
+    var file = iostream.ofstream(path)
+    var std = {"设备名称", "规格型号", "品牌", "维保单位", "质保期限", "是否建账", "是否可备用", "校区", "教学楼", "层数", "门牌号", "提交原因"}
+    foreach i in std
+        iostream.ostream.print(file,i)
+        if i != "提交原因"
+            iostream.ostream.print(file,',')
+        end
+    end
+end
