@@ -67,7 +67,8 @@ function to_timestamp(t)
         "day" : t.mday,
         "mon":t.mon+1,
         "hour": t.hour,
-        "min" : t.min
+        "min" : t.min,
+        "sec" : t.sec
     }.to_hash_map())))
 @end
 end
@@ -76,6 +77,7 @@ function from_timestamp(t)
     return json.to_var(json.from_string(base64.decode(t)))
 end
 # 时间戳（base码）到字符串
+# 也可以重写此函数，使其符合你的预期。
 function timestamp2string(t)
     var ts = from_timestamp(t)
     var hour = null
@@ -84,7 +86,7 @@ function timestamp2string(t)
     else
         hour = " 下午 " + align(to_string(ts.hour - 12))
     end
-    return to_string(ts.year + 1900)+ "年"+ to_string(ts.mon) + "月" + to_string(ts.day)+"日"+ align(hour) + " 时 " + align(to_string(ts.min)) + " 分" 
+    return to_string(ts.year + 1900)+ "年"+ to_string(ts.mon) + "月" + to_string(ts.day)+"日"+ align(hour) + " 时 " + align(to_string(ts.min)) + " 分 " + align(to_string(ts.sec))+" 秒"
 end
 
 function get_local_timestamp()
