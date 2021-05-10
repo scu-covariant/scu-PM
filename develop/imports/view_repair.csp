@@ -12,6 +12,8 @@ using imgui
 #已解决:不同的报修按钮取不同的名字
 #2.筛选界面的exit按钮 点击后返回主界面 记录仍未筛选内容  
 #已解决：查询语句不共用同一个变量 res
+#3.筛选界面的exit按钮 点击过程卡顿
+#猜测：与数据库调用有关  
 
 
 var select_way = {"按物资id查找","按物资状态查找","按物资名字查找"}
@@ -200,21 +202,21 @@ function repair_button_process(one_record)
         if(b_repair)
             repair_w_state[cur_uuid] = true
         end
-        if(repair_w_state.exit(cur_uuid) && repair_w_state[cur_uuid])
+        if(repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid])
             report_repair(one_record)
         end
     end
 
     if cur_signal == "3"
         var button_name = "修理完成##b"
-        button_name += to_string(count)
+        button_name += to_string(cur_uuid)
         var b_repair = button(button_name)
         
         #当报修按钮触发时
         if(b_repair)
             repair_w_state[cur_uuid] = true
         end
-        if(repair_w_state.exit(cur_uuid) && repair_w_state[cur_uuid])
+        if(repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid])
             data_supply(one_record)
         end
     end
@@ -231,6 +233,7 @@ function report_repair(repair_con)
     var w3_is_open = true
     begin_window("report_repair##w3",w3_is_open,{})
         text("this is report repair")
+        text(cur_uuid)
 
         if button("exit##b_repair_exit") || !w3_is_open
             repair_w_state[cur_uuid] = false;
@@ -240,11 +243,12 @@ end
 
 #该函数作用为：工作完成后，补充维修相关信息
 #构建一个gui弹窗（输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
-function data_supply(one_record,count)
+function data_supply(one_record)
     var cur_uuid = one_record.front.data
     var w4_is_open = true
     begin_window("data_supply##w4",w4_is_open,{})
         text("this is data_supply")
+        text(cur_uuid)
 
         if button("exit##b_supply_exit") || !w4_is_open
             repair_w_state[cur_uuid] = false;
