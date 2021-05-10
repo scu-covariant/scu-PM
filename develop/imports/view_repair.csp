@@ -9,12 +9,14 @@ using imgui
 
 #bug记录：
 #1.报修按钮只有第一个能用
-#2.筛选界面的exit按钮有问题
+#2.筛选界面的exit按钮 点击后返回主界面 记录仍未筛选内容  已解决
 
 
 var select_way = {"按物资id查找","按物资状态查找","按物资名字查找"}
 var select_kind = 3
 var input_con = ""
+var select_res = new array
+
 var w2_state = false
 var w3_state = false
 var w4_state = false
@@ -23,6 +25,8 @@ var select_state = false
 var repair_bs = new array
 var repair_w_state = new array
 var repair_con = new array
+
+
 
 function all_items_ifo(manager_id)
     import db_connector
@@ -38,11 +42,11 @@ function all_items_ifo(manager_id)
     #stmt.bind(0, name)
     #stmt.just_exec()
     
-    #var res = db.exec("select * from propertys where manager=\"" + manager_id + "\"")
+    var res = db.exec("select * from propertys where manager=\"" + manager_id + "\"")
     #var p =1
     #var res = db.exec("select * from propertys where manager=\"" + manager_id + "\"")
     #select出所有该manager管理的记录
-    var res = db.exec("select * from testtb")
+    #var res = db.exec("select * from testtb")
     return res
 end
 
@@ -80,6 +84,12 @@ function view_all_items(res,manager_id)
          #按钮 确认进入筛选界面
          same_line()
          var b1 = button("筛选")
+
+         text(" ")
+         text(" ")
+         text(" ")
+         text(" ")
+
  
          #当b1筛选按钮按下 并且 输入框内容不为空
          if b1 && !input_con.empty()
@@ -114,17 +124,17 @@ function view_all_items(res,manager_id)
             if(w2_state)
                  #select_with_id(manager_id,input_con,w2_state)
                  #在数据库中用uuid进行筛选
-                 res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and uuid=\"" + input_con + "\"")
+                 select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and uuid=\"" + input_con + "\"")
              end
              if(w3_state)
                  #select_with_id(manager_id,input_con,w3_state)
                   #在数据库中用signal进行筛选
-                 res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signal=\"" + input_con + "\"")
+                 select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signals=\"" + input_con + "\"")
              end
              if(w4_state)
                  #select_with_id(manager_id,input_con,w4_state)
                   #在数据库中用name进行筛选
-                 res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signal=\"" + property_signal + "\"")
+                 select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and eq_name like \"%" + input_con + "%\"")
              end
  
              var w2_is_open = true
@@ -134,12 +144,12 @@ function view_all_items(res,manager_id)
                  set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
  
                  #处理记录为空情况
-                 if(res.empty())
+                 if(select_res.empty())
                      text("无该项记录")
                  end
                  
                  #将记录中数据全部输出
-                 foreach i in res
+                 foreach i in select_res
                      var data_in_line = ""
                      foreach j in i
                          data_in_line += j.data + ' '
@@ -152,6 +162,10 @@ function view_all_items(res,manager_id)
                  if button("exit##b2") || !w2_is_open
                      select_state = false
                  end
+
+                  #末尾两空行，不然点下面按钮不方便
+                text("")
+                text("")
                  
              end_window()   
       
@@ -186,91 +200,6 @@ function repair_button_process(one_record,count)
     end
 
 end
-
-function select_with_id(manager_id,property_id,w2_state)
-    #作用：根据物品id进行搜索
-    import db_connector
-    var db = db_connector.start()
-    if db == null
-        system.out.println("连接失败,程序终止！")
-        system.exit(1)
-    end
-
-    var res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and uuid=\"" + property_id + "\"")
-    var w2_is_open = true
-    begin_window("select_with_id##w2",w2_is_open,{})
-        foreach i in res
-            var data_in_line = ""
-            foreach j in i
-                data_in_line += j.data + ' '
-            end
-            text(data_in_line)
-        end
-
-        if button("exit##b2") || !w2_is_open
-            w2_state = false;
-        end
-    
-    end_window()   
-end
-
-
-function select_with_signal(property_signal)
-    #作用：根据物品signal进行搜索
-    import db_connector
-    var db = db_connector.start()
-    if db == null
-        system.out.println("连接失败,程序终止！")
-        system.exit(1)
-    end
-
-    var res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signal=\"" + property_signal + "\"")
-    var w3_is_open = true
-    begin_window("select_with_signal##w3",w3_is_open,{})
-        foreach i in res
-            var data_in_line = ""
-            foreach j in i
-                data_in_line += j.data + ' '
-            end
-            text(data_in_line)
-        end
-
-        if button("exit##b3") || !w3_is_open
-            w3_state = false;
-        end
-    
-    end_window()   
-end
-
-function select_with_name(property_name)
-    #作用：根据物品name进行搜索
-    import db_connector
-    var db = db_connector.start()
-    if db == null
-        system.out.println("连接失败,程序终止！")
-        system.exit(1)
-    end
-
-    var res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signal=\"" + property_signal + "\"")
-    var w4_is_open = true
-    begin_window("select_with_name##w4",w3_is_open,{})
-        foreach i in res
-            var data_in_line = ""
-            foreach j in i
-                data_in_line += j.data + ' '
-            end
-            text(data_in_line)
-        end
-
-        if button("exit##b2") || !w2_is_open
-            w2_state = false;
-        end
-    
-    end_window()   
-end
-##以上搜索方式暂时保留 根据数据情况进行选择+优化
-##gui界面为常驻界面 按键更改画面内容
-
 
 
 function report_repair(count)
