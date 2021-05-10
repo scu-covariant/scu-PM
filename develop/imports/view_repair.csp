@@ -8,8 +8,10 @@ using imgui
 
 
 #bug记录：
-#1.报修按钮只有第一个能用
-#2.筛选界面的exit按钮 点击后返回主界面 记录仍未筛选内容  已解决
+#1.报修按钮只有第一个能用 
+#已解决:不同的报修按钮取不同的名字
+#2.筛选界面的exit按钮 点击后返回主界面 记录仍未筛选内容  
+#已解决：查询语句不共用同一个变量 res
 
 
 var select_way = {"按物资id查找","按物资状态查找","按物资名字查找"}
@@ -24,6 +26,7 @@ var select_state = false
 
 var repair_bs = new array
 var repair_w_state = new array
+var count = 0
 var repair_con = new array
 
 
@@ -65,7 +68,7 @@ function view_all_items(res,manager_id)
         set_window_pos(vec2(0,0))
         set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
 
-        var count=0
+        count = 0
         foreach i in res
             #repair_con.push_back(i)
             repair_button_process(i,count)
@@ -179,6 +182,7 @@ end
 
 function repair_button_process(one_record,count)
     #将one_record处理为输出的字符串
+
     var data_in_line = ""
     foreach j in one_record
         data_in_line += j.data + '\t'
@@ -187,12 +191,15 @@ function repair_button_process(one_record,count)
     #将字符串打印到屏幕，并放置报修按钮
     text(data_in_line)
     same_line()
-    var b_repair = button("报修##bi")
+    var button_name = "报修##bi"
+    button_name += to_string(count)
+    var b_repair = button(button_name)
     
     #当报修按钮触发时
     if(b_repair)
         repair_w_state.at(count) = true
         repair_con = one_record
+        text(to_string(count))
     end
     if(repair_w_state.at(count))
         report_repair(count)
