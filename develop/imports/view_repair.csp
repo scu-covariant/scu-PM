@@ -6,25 +6,31 @@ import csdbc_mysql
 using system
 using imgui
 
+
+#bug记录：
+#1.报修按钮只有第一个能用
+#2.筛选界面的exit按钮有问题
+
+
 var select_way = {"按物资id查找","按物资状态查找","按物资名字查找"}
 var select_kind = 3
 var input_con = ""
 var w2_state = false
 var w3_state = false
 var w4_state = false
+var select_state = false
 
+var repair_bs = new array
+var repair_w_state = new array
+var repair_con = new array
 
-function view_all_items(manager_id)
-    #作用：查看某个管理员管辖的所有物品
-    #按钮触发 gui界面长期存在
+function all_items_ifo(manager_id)
     import db_connector
     var db = db_connector.start()
     if db == null
         system.out.println("连接失败,程序终止！")
         system.exit(1)
     end
-    
-
     #db.just_exec("insert into propertys(eq_name, manager) values(\"a\",1)")
     
     #var stmt = db.prepare("insert into propertys(eq_name, manager) values(\"?\",1)")
@@ -35,58 +41,151 @@ function view_all_items(manager_id)
     #var res = db.exec("select * from propertys where manager=\"" + manager_id + "\"")
     #var p =1
     #var res = db.exec("select * from propertys where manager=\"" + manager_id + "\"")
+    #select出所有该manager管理的记录
     var res = db.exec("select * from testtb")
+    return res
+end
 
+function view_all_items(res,manager_id)
+    #作用：查看某个管理员管辖的所有物品
+    #按钮触发 gui界面长期存在
+  
+    if(repair_w_state.empty())
+        for i=0,i<res.size,++i
+            repair_w_state.push_back(false)
+        end
+    end
+    #打开基础窗口
     var window_opened = true
     begin_window("view##w1",window_opened,{})
         set_window_pos(vec2(0,0))
         set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
-        text("你好世界")
+
+        var count=0
         foreach i in res
-            var data_in_line = ""
-            foreach j in i
-                data_in_line += j.data + '\t'
-            end
-            text(data_in_line)
+            #repair_con.push_back(i)
+            repair_button_process(i,count)
+            #text(data_in_line)
+            #same_line()
+            #var b_repair = button("报修##bi")
+            #repair_bs.push_back(b_repair)
+            count++
+            
         end
         
-        var c1 = combo_box("查找方式",select_kind,select_way)
-
-        var i1 = input_text("", input_con, 100)
-
-        var b1 = button("筛选")
-
-        if b1 && !input_con.empty()
-            switch select_kind
-                case 0
-                    w2_state = true
-                    text("0")
-                end
-                case 1
-                    w3_state = true
-                    text("1")
-                end
-                case 2
-                    w4_state = true
-                    text("2")
-                end
+         #下拉框 选择筛选方式
+         var c1 = combo_box("查找方式",select_kind,select_way)
+         #输入框 输入筛选内容
+         var i1 = input_text("", input_con, 100)
+         #按钮 确认进入筛选界面
+         same_line()
+         var b1 = button("筛选")
+ 
+         #当b1筛选按钮按下 并且 输入框内容不为空
+         if b1 && !input_con.empty()
+             #改变窗口bool值状态
+             switch select_kind
+                 case 0
+                     w2_state = true
+                     select_state = true
+                     text("0")
+                 end
+                 case 1
+                     w3_state = true
+                     select_state = true
+                     text("1")
+                 end
+                 case 2
+                     w4_state = true
+                     select_state = true
+                     text("2")
+                 end
+             end
+         end
+ 
+ 
+         if(select_state)
+            import db_connector
+            var db = db_connector.start()
+            if db == null
+                system.out.println("连接失败,程序终止！")
+                system.exit(1)
             end
-        end
-
-        if(w2_state)
-            select_with_id(manager_id,input_con,w2_state)
-        end
-        if(w3_state)
-            select_with_id(manager_id,input_con,w3_state)
-        end
-        if(w4_state)
-            select_with_id(manager_id,input_con,w4_state)
-        end
+            if(w2_state)
+                 #select_with_id(manager_id,input_con,w2_state)
+                 #在数据库中用uuid进行筛选
+                 res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and uuid=\"" + input_con + "\"")
+             end
+             if(w3_state)
+                 #select_with_id(manager_id,input_con,w3_state)
+                  #在数据库中用signal进行筛选
+                 res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signal=\"" + input_con + "\"")
+             end
+             if(w4_state)
+                 #select_with_id(manager_id,input_con,w4_state)
+                  #在数据库中用name进行筛选
+                 res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signal=\"" + property_signal + "\"")
+             end
+ 
+             var w2_is_open = true
+             begin_window("select_with_##w2",w2_is_open,{})
+                 #window属性设置
+                 set_window_pos(vec2(0,0))
+                 set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+ 
+                 #处理记录为空情况
+                 if(res.empty())
+                     text("无该项记录")
+                 end
+                 
+                 #将记录中数据全部输出
+                 foreach i in res
+                     var data_in_line = ""
+                     foreach j in i
+                         data_in_line += j.data + ' '
+                     end
+                     text(data_in_line)
+                 end
+                 
+                 
+                 #处理用户要退出的情况：1.按exit按钮 2.直接点×退出
+                 if button("exit##b2") || !w2_is_open
+                     select_state = false
+                 end
+                 
+             end_window()   
+      
+                end
+        
 
     
     end_window()
 end
 
+
+function repair_button_process(one_record,count)
+    #将one_record处理为输出的字符串
+    var data_in_line = ""
+    foreach j in one_record
+        data_in_line += j.data + '\t'
+    end
+
+    #将字符串打印到屏幕，并放置报修按钮
+    text(data_in_line)
+    same_line()
+    var b_repair = button("报修##bi")
+    
+    #当报修按钮触发时
+    if(b_repair)
+        repair_w_state.at(count) = true
+        repair_con = one_record
+    end
+    if(repair_w_state.at(count))
+        report_repair(count)
+        #text("repair_report")
+    end
+
+end
 
 function select_with_id(manager_id,property_id,w2_state)
     #作用：根据物品id进行搜索
@@ -118,17 +217,79 @@ end
 
 function select_with_signal(property_signal)
     #作用：根据物品signal进行搜索
+    import db_connector
+    var db = db_connector.start()
+    if db == null
+        system.out.println("连接失败,程序终止！")
+        system.exit(1)
+    end
+
+    var res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signal=\"" + property_signal + "\"")
+    var w3_is_open = true
+    begin_window("select_with_signal##w3",w3_is_open,{})
+        foreach i in res
+            var data_in_line = ""
+            foreach j in i
+                data_in_line += j.data + ' '
+            end
+            text(data_in_line)
+        end
+
+        if button("exit##b3") || !w3_is_open
+            w3_state = false;
+        end
+    
+    end_window()   
 end
+
 function select_with_name(property_name)
     #作用：根据物品name进行搜索
+    import db_connector
+    var db = db_connector.start()
+    if db == null
+        system.out.println("连接失败,程序终止！")
+        system.exit(1)
+    end
+
+    var res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signal=\"" + property_signal + "\"")
+    var w4_is_open = true
+    begin_window("select_with_name##w4",w3_is_open,{})
+        foreach i in res
+            var data_in_line = ""
+            foreach j in i
+                data_in_line += j.data + ' '
+            end
+            text(data_in_line)
+        end
+
+        if button("exit##b2") || !w2_is_open
+            w2_state = false;
+        end
+    
+    end_window()   
 end
 ##以上搜索方式暂时保留 根据数据情况进行选择+优化
 ##gui界面为常驻界面 按键更改画面内容
 
-function report_repair(manager_id)
+
+
+function report_repair(count)
     #作用：进行报修填表
     #构建一个gui弹窗 报修按钮触发 输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
+    var w3_is_open = true
+    begin_window("report_repair##w3",w3_is_open,{})
+        var data_in_line = new string
+        foreach j in repair_con
+            data_in_line += j.data + '\t'
+        end
+        text(data_in_line)
+
+        if button("exit##b_repair_exit") || !w3_is_open
+            repair_w_state.at(count) = false;
+        end
+    end_window()   
 end
+
 function data_supply(manager_id)
     #该函数作用为：工作完成后，补充维修相关信息
     #构建一个gui弹窗（输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
