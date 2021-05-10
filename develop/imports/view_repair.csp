@@ -25,8 +25,7 @@ var w4_state = false
 var select_state = false
 
 var repair_bs = new array
-var repair_w_state = new array
-var count = 0
+var repair_w_state = new hash_map
 var repair_con = new array
 
 
@@ -57,26 +56,25 @@ function view_all_items(res,manager_id)
     #作用：查看某个管理员管辖的所有物品
     #按钮触发 gui界面长期存在
   
-    if(repair_w_state.empty())
-        for i=0,i<res.size,++i
-            repair_w_state.push_back(false)
-        end
-    end
+    #if(repair_w_state.empty())
+     #   for i=0,i<res.size,++i
+      #      repair_w_state.push_back(false)
+      #  end
+    #end
+
     #打开基础窗口
     var window_opened = true
     begin_window("view##w1",window_opened,{})
         set_window_pos(vec2(0,0))
         set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
 
-        count = 0
         foreach i in res
             #repair_con.push_back(i)
-            repair_button_process(i,count)
+            repair_button_process(i)
             #text(data_in_line)
             #same_line()
             #var b_repair = button("报修##bi")
             #repair_bs.push_back(b_repair)
-            count++
             
         end
         
@@ -180,53 +178,76 @@ function view_all_items(res,manager_id)
 end
 
 
-function repair_button_process(one_record,count)
+function repair_button_process(one_record)
     #将one_record处理为输出的字符串
 
     var data_in_line = ""
     foreach j in one_record
         data_in_line += j.data + '\t'
     end
-
+    var cur_signal = one_record.back.data
+    var cur_uuid = one_record.front.data
     #将字符串打印到屏幕，并放置报修按钮
     text(data_in_line)
     same_line()
-    var button_name = "报修##bi"
-    button_name += to_string(count)
-    var b_repair = button(button_name)
-    
-    #当报修按钮触发时
-    if(b_repair)
-        repair_w_state.at(count) = true
-        repair_con = one_record
-        text(to_string(count))
+
+    if cur_signal == "1" || cur_signal == "2" || cur_signal == "4"
+        var button_name = "报修##b"
+        button_name += cur_uuid
+        var b_repair = button(button_name)
+        
+        #当报修按钮触发时
+        if(b_repair)
+            repair_w_state[cur_uuid] = true
+        end
+        if(repair_w_state.exit(cur_uuid) && repair_w_state[cur_uuid])
+            report_repair(one_record)
+        end
     end
-    if(repair_w_state.at(count))
-        report_repair(count)
-        #text("repair_report")
+
+    if cur_signal == "3"
+        var button_name = "修理完成##b"
+        button_name += to_string(count)
+        var b_repair = button(button_name)
+        
+        #当报修按钮触发时
+        if(b_repair)
+            repair_w_state[cur_uuid] = true
+        end
+        if(repair_w_state.exit(cur_uuid) && repair_w_state[cur_uuid])
+            data_supply(one_record)
+        end
     end
+
+
 
 end
 
 
-function report_repair(count)
+function report_repair(repair_con)
     #作用：进行报修填表
     #构建一个gui弹窗 报修按钮触发 输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
+    var cur_uuid = repair_con.front.data
     var w3_is_open = true
     begin_window("report_repair##w3",w3_is_open,{})
-        var data_in_line = new string
-        foreach j in repair_con
-            data_in_line += j.data + '\t'
-        end
-        text(data_in_line)
+        text("this is report repair")
 
         if button("exit##b_repair_exit") || !w3_is_open
-            repair_w_state.at(count) = false;
+            repair_w_state[cur_uuid] = false;
         end
     end_window()   
 end
 
-function data_supply(manager_id)
-    #该函数作用为：工作完成后，补充维修相关信息
-    #构建一个gui弹窗（输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
+#该函数作用为：工作完成后，补充维修相关信息
+#构建一个gui弹窗（输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
+function data_supply(one_record,count)
+    var cur_uuid = one_record.front.data
+    var w4_is_open = true
+    begin_window("data_supply##w4",w4_is_open,{})
+        text("this is data_supply")
+
+        if button("exit##b_supply_exit") || !w4_is_open
+            repair_w_state[cur_uuid] = false;
+        end
+    end_window()   
 end
