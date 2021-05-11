@@ -5,7 +5,7 @@ import time_base64
 
 package new_request
 
-#单条录入函数，传入一条要录入的条目数组以及管理员id。
+# 单条录入函数，传入一条要录入的条目数组以及管理员id。
 #================注意：该函数每次调用必须间隔至少一秒钟，否则将导致时间戳冲突从而造成申请表中的item_id混乱！！！================
 function single_insert(arr, group_admin)
     var pro = new structs.property
@@ -29,6 +29,7 @@ function single_insert(arr, group_admin)
     pro.signal = 1
     pro.manager = group_admin
 
+    pla.group_admin = group_admin
     pla.dd_first = arr[7]
     pla.dd_second = arr[8]
     pla.dd_third = string.to_number(arr[9])
@@ -83,6 +84,7 @@ function multi_insert(values, group_admin)
         pro.signal = 1
         pro.manager = group_admin
 
+        pla.group_admin = group_admin
         pla.dd_first = arr[7]
         pla.dd_second = arr[8]
         pla.dd_third = string.to_number(arr[9])
@@ -112,6 +114,17 @@ function multi_insert(values, group_admin)
         add_req(req)
         count++
     end
+end
+
+# 单条修改函数，按物品信息，申请信息，地点信息的顺序传入三个结构体
+function single_change(pro, req, pla)
+    check_place(pla)
+
+    pro.local_place = pla.uuid
+
+    change_pro(pro)
+
+    change_req(req)
 end
 
 # 封装了异常处理和索引格式检查的csv读取函数，传入文件路径和用于存储纯条目信息的空二维数组（注：不返回索引）。
@@ -158,26 +171,26 @@ function check_place(loc)
     var db = db_connector.start()
     db.just_exec("ALTER TABLE places AUTO_INCREMENT = 1")
     var stmt = db.prepare("SELECT uuid FROM places WHERE group_admin=? AND dd_first=? AND dd_second=? AND dd_third=? AND dd_fourth=?")
-    stmt.bind(0,loc.group_admin)
-    stmt.bind(1,loc.dd_first)
-    stmt.bind(2,loc.dd_second)
-    stmt.bind(3,loc.dd_third)
-    stmt.bind(4,loc.dd_fourth)
+    loc.iter_prepare()
+    foreach i in range(1,6)
+        stmt.bind(i-1,loc.arr[i])
+    end
+    loc.clear_arr()
     var res = stmt.exec()
     if array.empty(res)
         stmt = db.prepare("INSERT INTO places(group_admin,dd_first,dd_second,dd_third,dd_fourth) values(?,?,?,?,?)")
-        stmt.bind(0,loc.group_admin)
-        stmt.bind(1,loc.dd_first)
-        stmt.bind(2,loc.dd_second)
-        stmt.bind(3,loc.dd_third)
-        stmt.bind(4,loc.dd_fourth)
+        loc.iter_prepare()
+        foreach i in range(1,6)
+            stmt.bind(i-1,loc.arr[i])
+        end
+        loc.clear_arr()
         stmt.just_exec()
         stmt = db.prepare("SELECT uuid FROM places WHERE group_admin=? AND dd_first=? AND dd_second=? AND dd_third=? AND dd_fourth=?")
-        stmt.bind(0,loc.group_admin)
-        stmt.bind(1,loc.dd_first)
-        stmt.bind(2,loc.dd_second)
-        stmt.bind(3,loc.dd_third)
-        stmt.bind(4,loc.dd_fourth)
+        loc.iter_prepare()
+        foreach i in range(1,6)
+            stmt.bind(i-1,loc.arr[i])
+        end
+        loc.clear_arr()
         res = stmt.exec()
         loc.uuid = res[0][0].data
     else
@@ -209,6 +222,77 @@ function add_req(info)
     stmt.just_exec()
 end
 
+# 查找驳回信息函数，传入管理员id和一个空数组，返回包含多条驳回信息的二维数组，每一行可以在construct()函数中构建结构体。
+function find_reject(id, list)
+    var db = db_connector.start()
+    var stmt = db.prepare("SELECT * FROM request_tb WHERE requester=? AND signals=2")
+    stmt.bind(0,id)
+    var res_req = stmt.exec()
+    var item_ids = {}, local_places = {}, res_pro = {}, res_pla = {}
+    foreach i in res_req
+        item_ids.push_back(i[1].data)
+    end
+    foreach i in item_ids
+        stmt = db.prepare("SELECT * FROM propertys WHERE uuid=?")
+        stmt.bind(0,i)
+        var res = stmt.exec()
+        res_pro.push_back(res[0])
+    end
+    foreach i in res_pro
+        local_places.push_back(i[9].data)
+    end
+    foreach i in local_places
+        stmt = db.prepare("SELECT * FROM places WHERE uuid=?")
+        stmt.bind(0,i)
+        var res = stmt.exec()
+        res_pla.push_back(res[0])
+    end
+    foreach i in res_pro
+        var temp = {}
+        foreach j in i
+            temp.push_back(j.data)
+        end
+        list.push_back(temp)
+    end
+    var x = 0
+    foreach i in list
+        foreach j in res_req[x]
+            i.push_back(j.data)
+        end
+        x++
+    end
+    x = 0
+    foreach i in list
+        foreach j in res_pla[x]
+            i.push_back(j.data)
+        end
+        x++
+    end
+end
+
+# 修改物品信息表的函数，传入要修改的物品信息结构体，函数通过uuid确定要修改的条目。
+function change_pro(item)
+    var db = db_connector.start()
+    var stmt = db.prepare("UPDATE propertys SET eq_name=?, eq_type=?, brand=?, wbdw=?, start_time=?, time_limit=?, sfjz=?, is_available=?, local_place=?, manager=?, signals=? WHERE uuid=?")
+    item.iter_prepare()
+    foreach i in range(1,12)
+        stmt.bind(i-1, item.arr[i])
+    end
+    item.clear_arr()
+    stmt.bind(11,item.uuid)
+    stmt.just_exec()
+end
+
+# 修改申请信息表的函数，传入要修改的申请信息结构体，函数通过item_id和requester确定要修改的条目。
+function change_req(info)
+    var db = db_connector.start()
+    var stmt = db.prepare("UPDATE request_tb SET signals=1, reason=? WHERE item_id=? AND requester=?")
+    stmt.bind(0,info.reason)
+    stmt.bind(1,info.item_id)
+    stmt.bind(2,info.requester)
+    stmt.just_exec()
+end
+
 function get_uuid_single(item)
     var db = db_connector.start()
     var stmt = db.prepare("SELECT uuid FROM propertys WHERE manager = ? AND start_time = ?")
@@ -227,7 +311,33 @@ function get_uuid_multi(group_admin, timestamp)
     return res
 end
 
-function show(pro, pla, req)
+# 结构体构建函数，传入一个包含主表，申请表和地点表返回信息的数组（即find_reject传入的list），
+# 以及三个空结构体，返回构建好的结构体
+function construct(arr, pro, req, pla)
+    pro.clear_arr()
+    foreach i in range(0,12)
+        pro.arr[i] = arr[i]
+    end
+    pro.assign()
+
+    req.clear_arr()
+    foreach i in range(0,7)
+        req.arr[i] = arr[i+12]
+    end
+    req.assign()
+
+    pla.clear_arr()
+    foreach i in range(0,6)
+        pla.arr[i] = arr[i+19]
+    end
+    pla.assign()
+
+    # 打印录入的结构体
+    show(pro, req, pla)
+end
+
+# 打印结构体到控制台
+function show(pro, req, pla)
     pro.iter_prepare()
     pla.iter_prepare()
     req.iter_prepare()
@@ -235,11 +345,11 @@ function show(pro, pla, req)
         system.out.print(i)
         system.out.print(" ")
     end
-    foreach i in pla.arr
+    foreach i in req.arr
         system.out.print(i)
         system.out.print(" ")
     end
-    foreach i in req.arr
+    foreach i in pla.arr
         system.out.print(i)
         system.out.print(" ")
     end
