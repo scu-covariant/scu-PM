@@ -16,23 +16,28 @@ using imgui
 #猜测：与数据库调用有关  
 #已解决：在w2打开前的数据库调用前加上条件判断select_res是否为空，同时w2结束时将select_res清空
 
-var db_state = false
-
+#筛选功能使用
 var select_way = {"按物资id查找","按物资状态查找","按物资名字查找"}
 var select_kind = 3
 var input_con = ""
 var select_res = new array
 
+#开select_window使用
 var w2_state = false
 var w3_state = false
 var w4_state = false
 var select_state = false
 
+# repair_button_process模块使用
 var repair_bs = new array
 var repair_w_state = new hash_map
 var repair_con = new array
 
-
+#填broken表使用
+var broke_time = ""
+var broken_reason = ""
+var broke_submit_state = false
+var broke_submit_success_state = false
 
 function all_items_ifo(manager_id)
     import db_connector
@@ -41,18 +46,8 @@ function all_items_ifo(manager_id)
         system.out.println("连接失败,程序终止！")
         system.exit(1)
     end
-    #db.just_exec("insert into propertys(eq_name, manager) values(\"a\",1)")
-    
-    #var stmt = db.prepare("insert into propertys(eq_name, manager) values(\"?\",1)")
-    #var name = "a"
-    #stmt.bind(0, name)
-    #stmt.just_exec()
     
     var res = db.exec("select * from propertys where manager=\"" + manager_id + "\"")
-    #var p =1
-    #var res = db.exec("select * from propertys where manager=\"" + manager_id + "\"")
-    #select出所有该manager管理的记录
-    #var res = db.exec("select * from testtb")
     return res
 end
 
@@ -134,7 +129,7 @@ function repair_button_process(one_record)
             repair_w_state[cur_uuid] = true
         end
         if(repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid])
-            report_repair(one_record)
+            report_repair(cur_uuid)
         end
     end
 
@@ -214,18 +209,63 @@ function select_window(res)
     end
 end
 
-function report_repair(repair_con)
+function report_repair(broken_item_id)
     #作用：进行报修填表
     #构建一个gui弹窗 报修按钮触发 输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
-    var cur_uuid = repair_con.front.data
+
     var w3_is_open = true
     begin_window("report_repair##w3",w3_is_open,{})
-        text("this is report repair")
-        text(cur_uuid)
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
 
-        if button("exit##b_repair_exit") || !w3_is_open
+        #提示文字
+        text("报修时间：")
+        same_line()
+        #输入框 输入报修时间
+        var broken_i1 = input_text("##broken_i1", broke_time, 100)
+
+        #提示文字
+        text("报修原因：")
+        same_line()
+        #输入框 输入报修原因
+        var broken_i2 = input_text("##broken_i2", broken_reason, 100)
+
+        #提交按钮
+        var broken_b1 = button("提交##broken_submit")
+        if(broken_b1)
+            broke_submit_state = true
+        end
+
+        if broke_submit_state
+            import db_connector
+            var db = db_connector.start()
+            if db == null
+                system.out.println("连接失败,程序终止！")
+                system.exit(1)
+            end
+
+            #向数据库表格broken插入数据 uuid,repair_time、repair_method为空,另外三个与变量绑定
+            var broken_stmt = db.prepare("insert into broken values (null,?,?,?,null,null)")
+            broken_stmt.bind(0, broken_item_id)
+            #是否要用 to_timestamp(broken_time)
+            broken_stmt.bind(1, broke_time) 
+            broken_stmt.bind(2, broken_reason)
+            broken_stmt.just_exec()
+
+            #修改broke_submit_success_state，使得出现提交成功提示字
+            broke_submit_success_state = true
+            #修改broke_submit_state，使得下次渲染不再调用数据库连接
+            broke_submit_state = false
+        end
+
+        if(broke_submit_success_state)
+            text("表单上传成功！")
+        end
+        
+        if button("退出##broken_exit") || !w3_is_open
             repair_w_state[cur_uuid] = false;
         end
+
     end_window()   
 end
 
