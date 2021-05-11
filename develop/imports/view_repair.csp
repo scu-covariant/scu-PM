@@ -14,7 +14,9 @@ using imgui
 #已解决：查询语句不共用同一个变量 res
 #3.筛选界面的exit按钮 点击过程卡顿
 #猜测：与数据库调用有关  
+#已解决：在w2打开前的数据库调用前加上条件判断select_res是否为空，同时w2结束时将select_res清空
 
+var db_state = false
 
 var select_way = {"按物资id查找","按物资状态查找","按物资名字查找"}
 var select_kind = 3
@@ -118,28 +120,39 @@ function view_all_items(res,manager_id)
  
  
          if(select_state)
-            import db_connector
-            var db = db_connector.start()
-            if db == null
-                system.out.println("连接失败,程序终止！")
-                system.exit(1)
+            
+                #import db_connector
+                #var db = db_connector.start()
+                #if db == null
+                #    system.out.println("连接失败,程序终止！")
+                #    system.exit(1)
+                #else
+                #    db_state = true
+                #end
+        
+            if(select_res.empty())
+                import db_connector
+                var db = db_connector.start()
+                if db == null
+                    system.out.println("连接失败,程序终止！")
+                    system.exit(1)
+                end
+
+                if(w2_state)
+                    #在数据库中用uuid进行筛选
+                    select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and uuid=\"" + input_con + "\"")
+                end
+                if(w3_state)
+                    #在数据库中用signal进行筛选
+                    select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signals=\"" + input_con + "\"")
+                end
+                if(w4_state)
+                    #select_with_id(manager_id,input_con,w4_state)
+                    #在数据库中用name进行筛选
+                    select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and eq_name like \"%" + input_con + "%\"")
+                end
             end
-            if(w2_state)
-                 #select_with_id(manager_id,input_con,w2_state)
-                 #在数据库中用uuid进行筛选
-                 select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and uuid=\"" + input_con + "\"")
-             end
-             if(w3_state)
-                 #select_with_id(manager_id,input_con,w3_state)
-                  #在数据库中用signal进行筛选
-                 select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signals=\"" + input_con + "\"")
-             end
-             if(w4_state)
-                 #select_with_id(manager_id,input_con,w4_state)
-                  #在数据库中用name进行筛选
-                 select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and eq_name like \"%" + input_con + "%\"")
-             end
- 
+
              var w2_is_open = true
              begin_window("select_with_##w2",w2_is_open,{})
                  #window属性设置
@@ -164,6 +177,7 @@ function view_all_items(res,manager_id)
                  #处理用户要退出的情况：1.按exit按钮 2.直接点×退出
                  if button("exit##b2") || !w2_is_open
                      select_state = false
+                     select_res.clear()
                  end
 
                   #末尾两空行，不然点下面按钮不方便
