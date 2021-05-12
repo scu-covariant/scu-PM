@@ -23,3 +23,7 @@ p("时间戳长度为："+ utc_stp.size)
 p(t.timestamp2string(loc_stp))
 p(t.timestamp2string(utc_stp))
 # 数据库中只存储时间戳
+##
+# 年是到1900年的年，mon是月份本身，day是日期，hour是当前小时24小时制，min是分，sec是秒
+var mytime = t.mytime_to_timestamp(2050-1900,11,22,6,32,45)
+p(t.timestamp2string(mytime))
