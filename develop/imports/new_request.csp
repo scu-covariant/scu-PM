@@ -427,3 +427,96 @@ function show(pro, req, pla)
     end
     system.out.print("\n")
 end
+
+function fix_request(group_admin, uni)
+    #打开基础窗口
+    var window_opened = true
+    begin_window("view##w1",window_opened,{})
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+
+         #输出每条记录，并在每条记录后添加相应按钮
+         text("uuid\teq_name\teq_type\tbrand\twbdw\tstart_time\ttime_limit\tsfjz\tis_available\tlocal_place\tmanager\tsignals")
+
+        foreach i in uni
+            one_reject_info(i)
+        end
+
+        text("")
+        text("")
+ 
+         #当b1筛选按钮按下 并且 输入框内容不为空
+         if b1 && !input_con.empty()
+             #改变窗口bool值状态
+             switch select_kind
+                 case 0
+                     w2_state = true
+                     select_state = true
+                     text("0")
+                 end
+                 case 1
+                     w3_state = true
+                     select_state = true
+                     text("1")
+                 end
+                 case 2
+                     w4_state = true
+                     select_state = true
+                     text("2")
+                 end
+             end
+         end
+
+        #打开筛选窗口
+         select_window()
+    end_window()
+end
+
+function one_reject_info(info)
+
+    
+
+    #将字符串打印到屏幕，并放置报修按钮
+    text(data_in_line)
+    same_line()
+
+    if cur_signal == "1" || cur_signal == "2" || cur_signal == "4"
+        var button_name = "报修##b"
+        button_name += cur_uuid
+        var b_repair = button(button_name)
+        
+        #当报修按钮触发时
+        if(b_repair)
+            repair_w_state[cur_uuid] = true
+            broken_time_init = true
+        end
+
+        if broken_time_init
+            broken_time = runtime.local_time()
+            broken_time_year = to_string(broken_time.year+1900)
+            broken_time_month = to_string(broken_time.mon+1)
+            broken_time_day = to_string(broken_time.mday)
+            broken_time_hour = to_string(broken_time.hour)
+            broken_time_min = to_string(broken_time.min)
+            broken_time_init = false
+        end
+
+        if(repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid])
+            report_repair(cur_uuid)
+        end
+    end
+
+    if cur_signal == "3"
+        var button_name = "修理完成##b"
+        button_name += to_string(cur_uuid)
+        var b_repair = button(button_name)
+        
+        #当报修按钮触发时
+        if(b_repair)
+            repair_w_state[cur_uuid] = true
+        end
+        if(repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid])
+            data_supply(one_record)
+        end
+    end
+end
