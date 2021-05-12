@@ -2,6 +2,7 @@ package view_repair
 
 import imgui
 import csdbc_mysql
+import time_base64
 
 using system
 using imgui
@@ -34,7 +35,12 @@ var repair_w_state = new hash_map
 var repair_con = new array
 
 #填broken表使用
-var broken_time = ""
+var broken_time = new hash_map
+var broken_time_year = ""
+var broken_time_month = ""
+var broken_time_day = ""
+var broken_time_hour = ""
+var broken_time_min = ""
 var broken_time_init = false
 var broken_reason = ""
 var broken_submit_state = false
@@ -144,7 +150,12 @@ function repair_button_process(one_record)
         end
 
         if broken_time_init
-            broken_time = "初始"
+            broken_time = runtime.local_time()
+            broken_time_year = to_string(broken_time.year+1900)
+            broken_time_month = to_string(broken_time.mon+1)
+            broken_time_day = to_string(broken_time.mday)
+            broken_time_hour = to_string(broken_time.hour)
+            broken_time_min = to_string(broken_time.min)
             broken_time_init = false
         end
 
@@ -237,14 +248,23 @@ function report_repair(broken_item_id)
         #提示文字
         text("报修时间：")
         same_line()
-        #输入框 输入报修时间
-        var broken_i1 = input_text("##broken_i1", broken_time, 100)
+        #var broken_i1 = input_text("##broken_i1", broken_time_year, 100)
+        var str = broken_time_year+"-"+broken_time_month+"-"+broken_time_day +" "+broken_time_hour+":"+broken_time_min
+        var broken_i1 = input_text("##broken_i1", str, 100)
+        #same_line()
+        #var broken_i2 = input_text("##broken_i2", broken_time_month, 100)
+        #same_line()
+        #var broken_i3 = input_text("##broken_i3", broken_time_day, 100)
+        #same_line()
+        #var broken_i4 = input_text("##broken_i4", broken_time_hour, 100)
+        #same_line()
+        #var broken_i5 = input_text("##broken_i5", broken_time_min, 100)
 
         #提示文字
         text("报修原因：")
         same_line()
         #输入框 输入报修原因
-        var broken_i2 = input_text("##broken_i2", broken_reason, 100)
+        var broken_i6 = input_text("##broken_i6", broken_reason, 100)
 
         #提交按钮
         var broken_b1 = button("提交##broken_submit")
