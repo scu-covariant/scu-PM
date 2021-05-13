@@ -9,6 +9,7 @@ var pro = new structs.property
 var pla = new structs.place
 var req = new structs.request
 
+<<<<<<< HEAD
 new_request.check_csv("data.csv", values)
 
 var db = db_connector.start()
@@ -19,6 +20,13 @@ foreach i in res
     end
     system.out.print("\n")
 end
+=======
+var a = runtime.local_time()
+new_request.check_csv("data.csv", values)
+var b = runtime.local_time()
+
+var db = db_connector.start()
+>>>>>>> 689941f7964b427ec6626bdd3034efdf42aa351d
 db.exec("DELETE FROM places;") # 清空地点信息表
 db.exec("DELETE FROM propertys;") # 清空物品信息表
 db.exec("DELETE FROM request_tb;") # 清空申请信息表
@@ -28,7 +36,17 @@ db.exec("DELETE FROM request_tb;") # 清空申请信息表
 #     runtime.delay(1000) #延迟等待一秒
 # end
 
+<<<<<<< HEAD
 new_request.multi_insert(values, group_admin) # 批量录入
+=======
+var c = runtime.local_time()
+new_request.multi_insert(values, group_admin) # 批量录入
+var d = runtime.local_time()
+system.out.println(a)
+system.out.println(b)
+system.out.println(c)
+system.out.println(d)
+>>>>>>> 689941f7964b427ec6626bdd3034efdf42aa351d
 
 new_request.find_reject(group_admin, values) # 查找驳回条目
 var x = 1
