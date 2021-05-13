@@ -16,6 +16,7 @@ class property
     var signal = 0
 
     var arr = new array
+    var name = {"uuid", "eq_name", "eq_type", "brand", "wbdw", "start_time", "time_limit", "sfjz", "is_available", "local_place", "manager", "signal"}
 
     function initialize()
     end
@@ -67,9 +68,9 @@ class place
     var dd_second = ""
     var dd_third = 0
     var dd_fourth = ""
-    var db_name = "places"
 
-    var arr = new array  
+    var arr = new array 
+    var name = {"uuid", "group_admin", "dd_first", "dd_second", "dd_third", "dd_fourth"}
 
     function initialize()
     end
@@ -112,6 +113,7 @@ class request
     var request_time = ""
 
     var arr = new array
+    var name = {"uuid", "item_id", "requester", "commiter", "signals", "reason", "request_time"}
 
     function initialize()
     end
