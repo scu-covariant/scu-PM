@@ -2,8 +2,14 @@ import csv
 import structs
 import db_connector
 import time_base64
+import imgui
+import imgui_font
+using imgui
 
 package new_request
+
+var ch_opened = false
+var cf_opened = false
 
 # 单条录入函数，传入一条要录入的条目数组以及管理员id。
 #================注意：该函数每次调用必须间隔至少一秒钟，否则将导致时间戳冲突从而造成申请表中的item_id混乱！！！================
@@ -434,89 +440,230 @@ function fix_request(group_admin, uni)
     begin_window("view##w1",window_opened,{})
         set_window_pos(vec2(0,0))
         set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
-
          #输出每条记录，并在每条记录后添加相应按钮
          text("uuid\teq_name\teq_type\tbrand\twbdw\tstart_time\ttime_limit\tsfjz\tis_available\tlocal_place\tmanager\tsignals")
+         text("")
 
-        foreach i in uni
-            one_reject_info(i)
+        foreach i in range(uni.size)
+            one_reject_info(uni[i])
+            var a = button("处理")
+            same_line()
+            text("")
+
+            if a
+                ch_opened = true
+            end
+
+            if ch_opened
+                change(i, uni[i], ch_opened)
+            end
         end
 
         text("")
         text("")
- 
-         #当b1筛选按钮按下 并且 输入框内容不为空
-         if b1 && !input_con.empty()
-             #改变窗口bool值状态
-             switch select_kind
-                 case 0
-                     w2_state = true
-                     select_state = true
-                     text("0")
-                 end
-                 case 1
-                     w3_state = true
-                     select_state = true
-                     text("1")
-                 end
-                 case 2
-                     w4_state = true
-                     select_state = true
-                     text("2")
-                 end
-             end
-         end
-
-        #打开筛选窗口
-         select_window()
     end_window()
 end
 
 function one_reject_info(info)
-
-    
-
-    #将字符串打印到屏幕，并放置报修按钮
-    text(data_in_line)
-    same_line()
-
-    if cur_signal == "1" || cur_signal == "2" || cur_signal == "4"
-        var button_name = "报修##b"
-        button_name += cur_uuid
-        var b_repair = button(button_name)
-        
-        #当报修按钮触发时
-        if(b_repair)
-            repair_w_state[cur_uuid] = true
-            broken_time_init = true
+    info[0].iter_prepare()
+    foreach i in range(0,12)
+        if i!=5 and i!=7 and i!=8 and i!=9 and i!= 11
+            text(info[0].arr[i]+"\t")
+            same_line()
+            continue
         end
-
-        if broken_time_init
-            broken_time = runtime.local_time()
-            broken_time_year = to_string(broken_time.year+1900)
-            broken_time_month = to_string(broken_time.mon+1)
-            broken_time_day = to_string(broken_time.mday)
-            broken_time_hour = to_string(broken_time.hour)
-            broken_time_min = to_string(broken_time.min)
-            broken_time_init = false
+        if i==5
+            text(time_base64.timestamp2string(info[0].arr[i]))
+            same_line()
+            continue
         end
-
-        if(repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid])
-            report_repair(cur_uuid)
+        if i == 7 or i == 8
+            if info[0].arr[i] == "0"
+                text("否\t")
+                same_line()
+                continue
+            else
+                text("是\t")
+                same_line()
+                continue
+            end
         end
-    end
-
-    if cur_signal == "3"
-        var button_name = "修理完成##b"
-        button_name += to_string(cur_uuid)
-        var b_repair = button(button_name)
-        
-        #当报修按钮触发时
-        if(b_repair)
-            repair_w_state[cur_uuid] = true
-        end
-        if(repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid])
-            data_supply(one_record)
+        if i == 11
+            if info[0].arr[i] == "1"
+                text("待审核\t")
+                same_line()
+                continue
+            else
+                text("出大问题\t")
+                same_line()
+                continue
+            end
         end
     end
+    info[2].iter_prepare()
+    foreach i in info[2].arr
+        text(i+"\t")
+        same_line()
+    end
+    info[1].iter_prepare()
+    foreach i in range(0, 7)
+        if i != 1 and i != 4 and i != 6
+            text(info[1].arr[i]+"\t")
+            same_line()
+            continue
+        end
+        if i == 4
+            if info[1].arr[i] == "1"
+                text("待审核\t")
+                same_line()
+                continue
+            else
+                text("驳回\t")
+                same_line()
+                continue
+            end
+        end
+        if i == 6
+            text(time_base64.timestamp2string(info[1].arr[i]))
+            same_line()
+            continue
+        end
+    end
+end
+
+function change(num, info, ch_opened)
+    foreach i in info
+        i.iter_prepare()
+    end
+    begin_window("change",ch_opened,{})
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        var str_1 = new array
+        foreach i in range(0,12)
+            if i!=5 and i!=7 and i!=8 and i!=9 and i!= 11
+                str_1.push_back(info[0].arr[i])
+                continue
+            end
+            if i==5
+                str_1.push_back(time_base64.timestamp2string(info[0].arr[i]))
+                continue
+            end
+            if i == 7 or i == 8
+                if info[0].arr[i] == "0" or info[0].arr[i] == 0
+                    str_1.push_back("否")
+                    continue
+                else
+                    str_1.push_back("是")
+                    continue
+                end
+            end
+            if i == 11
+                if info[0].arr[i] == "1" or info[0].arr[i] == 1
+                    str_1.push_back("待审核")
+                    continue
+                else
+                    str_1.push_back("出大问题")
+                    continue
+                end
+            end
+        end
+        var str_2 = new array
+        foreach i in info[2].arr
+            str_2.push_back(i)
+        end
+        var str_3 = new array
+        foreach i in range(0, 7)
+            if i != 1 and i != 4 and i != 6
+                str_3.push_back(info[1].arr[i])
+                continue
+            end
+            if i == 4
+                if info[1].arr[i] == "1" or info[1].arr[i] == 1
+                    str_3.push_back("待审核")
+                    continue
+                else
+                    str_3.push_back("驳回")
+                    continue
+                end
+            end
+            if i == 6
+                str_3.push_back(time_base64.timestamp2string(info[1].arr[i]))
+            end
+        end
+
+        foreach i in str_1
+            input_text("", i, 20)
+            same_line()
+            text("\t")
+            same_line()
+        end
+        foreach i in str_2
+            input_text("", i, 20)
+            same_line()
+            text("\t")
+            same_line()
+        end
+        foreach i in str_3
+            input_text("", i, 20)
+            same_line()
+            text("\t")
+            same_line()
+        end
+
+        foreach i in range(str_1.size)
+            if i!=5 and i!=7 and i!=8 and i!=9 and i!= 11
+                str_1.push_back(info[0].arr[i])
+                continue
+            end
+            if i == 7 or i == 8
+                if str_1[i] == "否"
+                    info[0].arr[i] = 0
+                    continue
+                else
+                    info[0].arr[i] = 1
+                    continue
+                end
+            end
+        end
+        foreach i in range(str_2.size)
+            info[2].arr[i] = str_2[i]
+        end
+        info[1].reason = str_3[5]
+
+        info[0].assign()
+        info[2].assign()
+
+        text("")
+        text("")
+        var a = button("提交")
+        var b = button("取消")
+        same_line()
+
+        if b
+            ch_opened = false
+            break
+        end
+
+        if a
+            cf_opened = true
+        end
+
+        if cf_opened
+            ch_fail(cf_opened)
+        end 
+    end_window()
+end
+
+function ch_fail(cf_opened)
+    begin_window("change",ch_opened,{})
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0)/4,get_monitor_height(0)/4))
+
+        text("提交成功或失败")
+
+        if button("确定")
+            cf_opened = false
+            break
+        end
+    end_window()
 end
