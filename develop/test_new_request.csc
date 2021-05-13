@@ -7,39 +7,27 @@ import imgui_font
 using imgui
 system.file.remove("./imgui.ini")
 
-var values = new array
-var uni = new array
-var pros = new array
-var reqs = new array
-var plas = new array
-var pro = new structs.property
-var pla = new structs.place
-var req = new structs.request
+# var values = new array
+# var uni = new array
+# var pros = new array
+# var reqs = new array
+# var plas = new array
+# var pro = new structs.property
+# var pla = new structs.place
+# var req = new structs.request
 var group_admin = 46 # 管理员id，后期通过封装好的函数参数获取
-
-new_request.find_reject(group_admin, values)
-
-foreach i in values
-    new_request.construct(i, pro, req, pla)
-    var info = new array
-    info.push_back(pro)
-    info.push_back(req)
-    info.push_back(pla)
-    uni.push_back(info)
-end
 
 var app=window_application(get_monitor_width(0)*0.75,get_monitor_height(0)*0.75,"开发样例")
 var font=add_font_extend_cn(imgui_font.source_han_sans, 32)
-var window_opened = true
 set_font_scale(1.2)
 while !app.is_closed()
     app.prepare()
     push_font(font)
-    if window_opened
-        new_request.fix_request(group_admin, uni)
-    else
-        break
+
+    if new_request.fix_opened
+        new_request.fix(group_admin)
     end
+
     pop_font()
     app.render()
 end
@@ -65,20 +53,3 @@ end
 # system.out.println(b)
 # system.out.println(c)
 # system.out.println(d)
-
-# new_request.find_reject(group_admin, values) # 查找驳回条目
-# var x = 1
-# foreach i in values
-#     var t = x
-#     to_string(t)
-#     new_request.construct(i, pro, req, pla) # 构建结构体
-#     var str = "修改名称", str2 = "修改原因", str3 = "修改地点"
-#     str += t
-#     str2 += t
-#     str3 += t
-#     pro.eq_name = str
-#     req.reason = str2
-#     pla.dd_first = str3
-#     new_request.single_change(pro, req, pla) # 单条修改条目
-#     x++
-# end

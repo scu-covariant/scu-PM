@@ -10,14 +10,22 @@ package new_request
 
 var ch_opened = false
 var cf_opened = false
+var fix_opened = true
 var mark = -1
+var find_rej = true
 
-function fix_request(group_admin, uni)
+var fix_uni = new array
+
+
+function fix_request(group_admin, uni, fix_opened)
     #打开基础窗口
-    var window_opened = true
-    begin_window("fix_base",window_opened,{})
+    begin_window("fix_base",fix_opened,{})
         set_window_pos(vec2(0,0))
         set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        if button("返回##return")
+            fix_opened = false
+            break
+        end
         foreach i in range(uni.size)
             one_reject_info(uni[i])
 
@@ -35,7 +43,7 @@ function fix_request(group_admin, uni)
         text("")
     end_window()
     if ch_opened
-        change(mark, uni[mark], ch_opened)
+        change(uni[mark], ch_opened)
     end
 end
 
@@ -106,7 +114,7 @@ function one_reject_info(info)
     end
 end
 
-function change(num, info, ch_opened)
+function change(info, ch_opened)
     foreach i in info
         i.iter_prepare()
     end
@@ -182,7 +190,7 @@ function change(num, info, ch_opened)
         end
 
         foreach i in range(0, 12)
-            if i!=5 and i!=7 and i!=8 and i!=9 and i!= 11 and i != 10
+            if i != 0 and i != 5 and i != 7 and i != 8 and i != 9 and i != 11 and i != 10
                 info[0].arr[i] = str_1[i]
                 continue
             end
@@ -196,11 +204,12 @@ function change(num, info, ch_opened)
                 end
             end
         end
+
         foreach i in range(0, 6)
             info[2].arr[i] = str_2[i]
         end
-        info[1].reason = str_3[5]
 
+        info[1].reason = str_3[5]
         info[0].assign()
         info[2].assign()
 
@@ -238,8 +247,32 @@ function ch_fail(cf_opened)
     end_window()
     if a
         cf_opened = false
+        ch_opened = false
         break
     end
+end
+
+function fix(group_admin)
+    if find_rej
+        var values = new array
+        system.out.println(runtime.local_time())
+        find_reject(group_admin, values)
+        system.out.println(runtime.local_time())
+
+        foreach i in values
+            var pro = new structs.property
+            var pla = new structs.place
+            var req = new structs.request
+            construct(i, pro, req, pla)
+            var info = new array
+            info.push_back(pro)
+            info.push_back(req)
+            info.push_back(pla)
+            fix_uni.push_back(info)
+        end
+        find_rej = false
+    end
+    fix_request(group_admin, fix_uni, fix_opened)
 end
 
 # 单条录入函数，传入一条要录入的条目数组以及管理员id。
@@ -541,8 +574,8 @@ function find_reject(id, list)
     foreach i in res_req
         item_ids.push_back(i[1].data)
     end
+    stmt = db.prepare("SELECT * FROM propertys WHERE uuid=?")
     foreach i in item_ids
-        stmt = db.prepare("SELECT * FROM propertys WHERE uuid=?")
         stmt.bind(0,i)
         var res = stmt.exec()
         res_pro.push_back(res[0])
@@ -550,8 +583,8 @@ function find_reject(id, list)
     foreach i in res_pro
         local_places.push_back(i[9].data)
     end
+    stmt = db.prepare("SELECT * FROM places WHERE uuid=?")
     foreach i in local_places
-        stmt = db.prepare("SELECT * FROM places WHERE uuid=?")
         stmt.bind(0,i)
         var res = stmt.exec()
         res_pla.push_back(res[0])
