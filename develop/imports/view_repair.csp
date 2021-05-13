@@ -46,6 +46,18 @@ var broken_reason = ""
 var broken_submit_state = false
 var broken_submit_success_state = false
 
+#填写logs表使用
+var finish_time = new hash_map
+var logs_time = ""
+var finish_time_year=""
+var finish_time_month=""
+var finish_time_day=""
+var logs_requester = new number
+var logs_detail = ""
+var finish_writing_state = false
+var finish_writing_success_state = false
+#var logs_signals = new number
+
 function all_items_ifo(manager_id)
     import db_connector
     var db = db_connector.start()
@@ -144,7 +156,7 @@ function repair_button_process(one_record)
         var b_repair = button(button_name)
         
         #当报修按钮触发时
-        if(b_repair)
+        if b_repair
             repair_w_state[cur_uuid] = true
             broken_time_init = true
         end
@@ -159,7 +171,7 @@ function repair_button_process(one_record)
             broken_time_init = false
         end
 
-        if(repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid])
+        if repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid]
             report_repair(cur_uuid)
         end
     end
@@ -170,19 +182,19 @@ function repair_button_process(one_record)
         var b_repair = button(button_name)
         
         #当报修按钮触发时
-        if(b_repair)
+        if b_repair
             repair_w_state[cur_uuid] = true
         end
-        if(repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid])
+        if repair_w_state.exist(cur_uuid) && repair_w_state[cur_uuid]
             data_supply(one_record)
         end
     end
 end
 
 function select_window()
-    if(select_state)
+    if select_state
         #当select_res为空时才进行数据库连接，初始化select_res,同时w2结束时将select_res清空
-        if(select_res.empty())
+        if select_res.empty()
             import db_connector
             var db = db_connector.start()
             if db == null
@@ -190,15 +202,15 @@ function select_window()
                 system.exit(1)
             end
 
-            if(w2_state)
+            if w2_state
                 #在数据库中用uuid进行筛选
                 select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and uuid=\"" + input_con + "\"")
             end
-            if(w3_state)
+            if w3_state
                 #在数据库中用signal进行筛选
                 select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and signals=\"" + input_con + "\"")
             end
-            if(w4_state)
+            if w4_state
                 #select_with_id(manager_id,input_con,w4_state)
                 #在数据库中用name进行筛选
                 select_res = db.exec("select * from propertys where manager=\"" + manager_id + "\" and eq_name like \"%" + input_con + "%\"")
@@ -212,7 +224,7 @@ function select_window()
             set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
  
             #处理记录为空情况
-            if(select_res.empty())
+            if select_res.empty()
                 text("无该项记录")
             end
                  
@@ -268,7 +280,7 @@ function report_repair(broken_item_id)
 
         #提交按钮
         var broken_b1 = button("提交##broken_submit")
-        if(broken_b1)
+        if broken_b1
             broken_submit_state = true
         end
 
@@ -294,7 +306,7 @@ function report_repair(broken_item_id)
             broken_submit_state = false
         end
 
-        if(broken_submit_success_state)
+        if broken_submit_success_state
             text("表单上传成功！")
         end
         
@@ -305,14 +317,63 @@ function report_repair(broken_item_id)
     end_window()   
 end
 
-#该函数作用为：工作完成后，补充维修相关信息
-#构建一个gui弹窗（输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
+
 function data_supply(one_record)
+    #该函数作用为：工作完成后，补充维修相关信息
+    #构建一个gui弹窗（输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
     var cur_uuid = one_record.front.data
     var w4_is_open = true
     begin_window("data_supply##w4",w4_is_open,{})
-        text("this is data_supply")
-        text(cur_uuid)
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(0.5*get_monitor_width(0),0.5*get_monitor_height(0)))
+        
+        text("报修完成表")
+        text("编号："+cur_uuid)
+        #直接生成当前时间
+        finish_time = runtime.local_time()
+        finish_time_year = to_string(finish_time.year+1900)
+        finish_time_month = to_string(finish_time.month+1)
+        finish_time_day = to_string(finish_time.mday)
+        logs_time=finish_time_year+"-"+finish_time_month+"-"+finish_time_day
+        text("填表时间"+logs_time)
+        #输入填表人的id
+        text("填表人：")
+        same_line()
+        var supply_id = input_text("##suppy_id",requester,20)
+        #commiter不填写 仅列出
+        text("批准人：")
+        #输入框 输入细节
+        text("补充信息")
+        same_line()
+        var supply_detail = input_text("##suppy_detail",detail,100)
+        #完成按钮
+        var supply_b1 = button("完成##finish_writing")
+        if supply_b1
+            finish_writing_state = true
+        end
+        if finish_writing_state
+            import db_connector
+            var db = db_connector.start()
+            if db == null
+                system.out.println("连接失败,程序终止！")
+                system.exit(1)
+            end
+        
+        #向数据库logs表填信息
+        #logs_signals = 2
+        var logs_stmt = db.prepare("insert into logs values (null,?,?,null,?,?)")
+        logs_stmt.bind(0,logs_time)
+        logs_stmt.bind(1,logs_requester)
+        logs_stmt.bind(2,logs_detail)
+        logs_stmt.bind(3,2)
+        logs_stmt.just_exec()
+        finish_writing_success_state = true
+        #下次渲染不再调用数据库连接
+        finish_writing_state = false
+
+        if finish_writing_success_state
+            text("表单上传成功！")
+        end
 
         if button("exit##b_supply_exit") || !w4_is_open
             repair_w_state[cur_uuid] = false;
