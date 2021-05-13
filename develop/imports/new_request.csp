@@ -16,6 +16,26 @@ var find_rej = true
 
 var fix_uni = new array
 
+function fix(group_admin)
+    if find_rej
+        var values = new array
+        find_reject(group_admin, values)
+
+        foreach i in values
+            var pro = new structs.property
+            var pla = new structs.place
+            var req = new structs.request
+            construct(i, pro, req, pla)
+            var info = new array
+            info.push_back(pro)
+            info.push_back(req)
+            info.push_back(pla)
+            fix_uni.push_back(info)
+        end
+        find_rej = false
+    end
+    fix_request(group_admin, fix_uni, fix_opened)
+end
 
 function fix_request(group_admin, uni, fix_opened)
     #打开基础窗口
@@ -27,7 +47,7 @@ function fix_request(group_admin, uni, fix_opened)
             break
         end
         foreach i in range(uni.size)
-            one_reject_info(uni[i])
+            one_reject_info(uni[i], i)
 
             var str = "处理##" + to_string(i)
 
@@ -35,83 +55,73 @@ function fix_request(group_admin, uni, fix_opened)
                 ch_opened = true
                 mark = i
             end
-            same_line()
             text("")
         end
-
-        text("")
-        text("")
     end_window()
     if ch_opened
         change(uni[mark], ch_opened)
     end
 end
 
-function one_reject_info(info)
-    info[0].iter_prepare()
-    foreach i in range(0,12)
-        if i!=5 and i!=7 and i!=8 and i!=9 and i!= 11
-            text(info[0].arr[i]+"\t")
-            same_line()
-            continue
-        end
-        if i==5
-            text(time_base64.timestamp2string(info[0].arr[i]))
-            same_line()
-            continue
-        end
-        if i == 7 or i == 8
-            if info[0].arr[i] == "0"
-                text("否\t")
-                same_line()
-                continue
-            else
-                text("是\t")
-                same_line()
+function one_reject_info(info, count)
+    var str = new array
+    var str_1 = new array
+    foreach i in info
+        i.iter_prepare()
+    end
+        foreach i in range(0,12)
+            if i!=5 and i!=7 and i!=8 and i!= 11
+                str.push_back(info[0].name[i] + to_string(info[0].arr[i]))
                 continue
             end
-        end
-        if i == 11
-            if info[0].arr[i] == "1"
-                text("待审核\t")
-                same_line()
-                continue
-            else
-                text("出大问题\t")
-                same_line()
+            if i==5
+                str.push_back(info[0].name[i] + time_base64.timestamp2string(info[0].arr[i]))
                 continue
             end
-        end
-    end
-    info[2].iter_prepare()
-    foreach i in info[2].arr
-        text(i+"\t")
-        same_line()
-    end
-    info[1].iter_prepare()
-    foreach i in range(0, 7)
-        if i != 1 and i != 4 and i != 6
-            text(info[1].arr[i]+"\t")
-            same_line()
-            continue
-        end
-        if i == 4
-            if info[1].arr[i] == "1"
-                text("待审核\t")
-                same_line()
-                continue
-            else
-                text("驳回\t")
-                same_line()
-                continue
+            if i == 7 or i == 8
+                if info[0].arr[i] == "0" or info[0].arr[i] == 0
+                    str.push_back(info[0].name[i] + "否")
+                    continue
+                else
+                    str.push_back(info[0].name[i] + "是")
+                    continue
+                end
+            end
+            if i == 11
+                if info[0].arr[i] == "1" or info[0].arr[i] == 1
+                    str.push_back(info[0].name[i] + "待审核")
+                    continue
+                else
+                    str.push_back(info[0].name[i] + "出大问题")
+                    continue
+                end
             end
         end
-        if i == 6
-            text(time_base64.timestamp2string(info[1].arr[i]))
-            same_line()
-            continue
+        var str_2 = new array
+        foreach i in range(info[2].arr.size)
+            str.push_back(info[2].name[i] + info[2].arr[i])
         end
-    end
+        var str_3 = new array
+        foreach i in range(0, 7)
+            if i != 4 and i != 6
+                str.push_back(info[1].name[i] + info[1].arr[i])
+                continue
+            end
+            if i == 4
+                if info[1].arr[i] == "1" or info[1].arr[i] == 1
+                    str.push_back(info[1].name[i] + "待审核")
+                    continue
+                else
+                    str.push_back(info[1].name[i] + "驳回")
+                    continue
+                end
+            end
+            if i == 6
+                str.push_back(info[1].name[i] + time_base64.timestamp2string(info[1].arr[i]))
+            end
+        end
+    var temp = "##" + to_string(count)
+    list_box(temp, 0, str)
 end
 
 function change(info, ch_opened)
@@ -121,8 +131,10 @@ function change(info, ch_opened)
     var a = false
     var b = false
     begin_window("change",ch_opened,{})
+        # set_window_pos(vec2(get_monitor_width(0)/10,get_monitor_height(0)/10))
+        # set_window_size(vec2(get_monitor_width(0)/1.2,get_monitor_height(0)/1.2))
         set_window_pos(vec2(0,0))
-        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)/1.05))
         var str_1 = new array
         foreach i in range(0,12)
             if i!=5 and i!=7 and i!=8 and i!= 11
@@ -177,15 +189,18 @@ function change(info, ch_opened)
         end
 
         foreach i in range(str_1.size)
-            var str = info[0].name[i] + "##pro" + info[0].name[i]
+            var str = "##pro" + info[0].name[i]
+            text(info[0].name[i])
             input_text(str, str_1[i], 100)
         end
         foreach i in range(str_2.size)
-            var str = info[2].name[i] + "##pla" + info[2].name[i]
+            var str = "##pla" + info[2].name[i]
+            text(info[2].name[i])
             input_text(str, str_2[i], 100)
         end
         foreach i in range(str_3.size)
-            var str = info[1].name[i] + "##req" + info[1].name[i]
+            var str = "##req" + info[1].name[i]
+            text(info[1].name[i])
             input_text(str, str_3[i], 100)
         end
 
@@ -212,9 +227,6 @@ function change(info, ch_opened)
         info[1].reason = str_3[5]
         info[0].assign()
         info[2].assign()
-
-        text("")
-        text("")
         a = button("提交##single_submit")
         same_line()
         b = button("取消##single_cancel")
@@ -237,8 +249,9 @@ end
 function ch_fail(cf_opened)
     var a = false
     begin_window("change_feed",cf_opened,{})
-        set_window_pos(vec2(0,0))
+        set_window_pos(vec2(get_monitor_width(0)/8,get_monitor_height(0)/8))
         set_window_size(vec2(get_monitor_width(0)/4,get_monitor_height(0)/4))
+        set_window_focus()
 
         text("提交成功")
         text("")
@@ -250,29 +263,6 @@ function ch_fail(cf_opened)
         ch_opened = false
         break
     end
-end
-
-function fix(group_admin)
-    if find_rej
-        var values = new array
-        system.out.println(runtime.local_time())
-        find_reject(group_admin, values)
-        system.out.println(runtime.local_time())
-
-        foreach i in values
-            var pro = new structs.property
-            var pla = new structs.place
-            var req = new structs.request
-            construct(i, pro, req, pla)
-            var info = new array
-            info.push_back(pro)
-            info.push_back(req)
-            info.push_back(pla)
-            fix_uni.push_back(info)
-        end
-        find_rej = false
-    end
-    fix_request(group_admin, fix_uni, fix_opened)
 end
 
 # 单条录入函数，传入一条要录入的条目数组以及管理员id。

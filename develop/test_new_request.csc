@@ -18,7 +18,7 @@ system.file.remove("./imgui.ini")
 var group_admin = 46 # 管理员id，后期通过封装好的函数参数获取
 
 var app=window_application(get_monitor_width(0)*0.75,get_monitor_height(0)*0.75,"开发样例")
-var font=add_font_extend_cn(imgui_font.source_han_sans, 32)
+var font=add_font_extend_cn(imgui_font.source_han_sans, 40)
 set_font_scale(1.2)
 while !app.is_closed()
     app.prepare()
