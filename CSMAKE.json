@@ -1,0 +1,6 @@
+{
+    "include":["develop"],
+    "require":"1.0.0",
+    "target":{
+    }
+}

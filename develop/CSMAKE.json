@@ -1,0 +1,39 @@
+{
+    "include":[],
+    "require":"1.0.0",
+    "target":{
+        "csv":{
+            "file":"test_csv.csc",
+            "no-opt": false,
+            "compile-only":false,
+            "import_path":["imports"],
+            "require" : [],
+            "arguments":""
+        },
+        "db":{
+            "file":"test_db_connector.csc",
+            "no-opt": false,
+            "compile-only":false,
+            "import_path":["imports"],
+            "require" : [],
+            "arguments":""
+        },
+        "hello":{
+            "file":"test_hello.csc",
+            "no-opt": false,
+            "compile-only":false,
+            "import_path":["imports"],
+            "require" : ["imgui_font","csdbc_sqlite","imgui"],
+            "arguments":""
+        },
+        "time":{
+            "file":"test_time_base64.csc",
+            "no-opt": false,
+            "compile-only":false,
+            "import_path":["imports"],
+            "require" : [],
+            "arguments":""
+        }
+    }
+}
+
