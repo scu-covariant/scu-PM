@@ -2,8 +2,538 @@ import csv
 import structs
 import db_connector
 import time_base64
+import imgui
+import imgui_font
+using imgui
 
 package new_request
+
+var ch_opened = false # 控制单条修改提交窗口
+var sf_opened = false # 控制提交反馈
+var fix_opened = true # 控制被驳回申请查看窗口
+var multi_opened = false # 控制批量修改窗口
+var submit_opened = false # 控制批量提交反馈
+var mc_opened = false # 控制单独编辑窗口
+var wt_opened = false # 控制批量提交等待弹窗
+var submit_flag = false # 控制对批量提交函数的调用
+var find_rej = true # 在初始化时控制查找被驳回条目
+var mark = -1 # 记录要处理的条目编号
+
+var uni = new array # 联合结构体数组容器
+var all_reasons = new string # 统一修改原因
+
+var selected_fix = new hash_map # 勾选框勾选状况存储表
+
+var db = db_connector.start()
+
+# 修改驳回初始化主函数，第一次调用会查找当前管理员所有被驳回的申请
+function fix(group_admin)
+    if find_rej
+        uni.clear()
+        var values = new array
+        find_reject(group_admin, values)
+
+        foreach i in values
+            var pro = new structs.property
+            var pla = new structs.place
+            var req = new structs.request
+            construct(i, pro, req, pla)
+            var info = new array
+            info.push_back(pro)
+            info.push_back(req)
+            info.push_back(pla)
+            uni.push_back(info)
+        end
+        find_rej = false
+        selected_fix.clear()
+        foreach i in range(uni.size)
+            selected_fix[to_string(i)] = false
+        end
+    end
+    fix_request(group_admin)
+end
+
+# 被驳回申请查看窗口
+function fix_request(group_admin)
+    begin_window("被驳回申请查看窗口",fix_opened,{})
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        if button("返回##return")
+            fix_opened = false
+            break
+        end
+        text("")
+        if button("刷新##refresh")
+            find_rej = true
+        end
+        same_line()
+        if button("批量处理##multi_deal")
+            multi_opened = true
+        end
+        text("")
+        foreach i in range(uni.size)
+            check_box(to_string(i+1), selected_fix[to_string(i)])
+            same_line()
+            one_reject_info(uni[i], i)
+
+            var str = "处理##" + to_string(i)
+            same_line()
+            if button(str)
+                ch_opened = true
+                mark = i
+            end
+        end
+    end_window()
+    if ch_opened
+        change(uni[mark], mark)
+    end
+    if multi_opened
+        multi_deal()
+    end
+end
+
+# 批量编辑及批量提交窗口
+function multi_deal()
+    begin_window("批量修改窗口",multi_opened,{})
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        if button("返回##return_multi") or !multi_opened
+            multi_opened = false
+            break
+        end
+        text("")
+        if button("批量提交##multi_submit")
+            submit_flag = true
+            submit_opened = true
+            # wt_opened = true
+        end
+        input_text_multiline("统一修改原因##all_reasons", all_reasons, 255)
+        if button("将原因写入所有条目")
+            all_reason()
+            all_reasons.clear()
+        end
+        text("")
+        foreach i in range(uni.size)
+            if selected_fix[to_string(i)]
+                one_reject_info(uni[i], i)
+                var str = "修改##multi_" + to_string(i)
+                if button(str)
+                    mc_opened = true
+                    mark = i
+                end
+            end
+        end
+        text("")
+        text("")
+    end_window()
+    if mc_opened
+        multi_change(uni[mark])
+    end
+    # if wt_opened
+    #     waiting()
+    # end
+    if submit_flag
+        multi_submit()
+        submit_flag = false
+        wt_opened = false
+        foreach i in range(uni.size)
+            if selected_fix[to_string(i)]
+                var it = array.begin(uni)
+                foreach j in range(i)
+                    array.iterator.next(it)
+                end
+                array.erase(uni, it)
+            end
+        end
+        selected_fix.clear()
+        foreach i in range(uni.size)
+            selected_fix[to_string(i)] = false
+        end
+    end
+    if submit_opened
+        multi_feedback()
+    end
+end
+
+# 等待提交窗口
+function waiting()
+    begin_window("批量提交等待弹窗##waiting",wt_opened,{})
+        set_window_pos(vec2(get_monitor_width(0)/8,get_monitor_height(0)/8))
+        set_window_size(vec2(get_monitor_width(0)/4,get_monitor_height(0)/4))
+        set_window_focus()
+
+        text("提交中，请耐心等待！")
+        text("")
+    end_window()
+end
+
+# 将统一原因写入所有被选中的条目
+function all_reason()
+    foreach i in range(uni.size)
+        if selected_fix[to_string(i)]
+            uni[i][1].reason = all_reasons
+        end
+    end
+end
+
+# 单挑被驳回信息显示函数
+function one_reject_info(info, count)
+    var str = new array
+    var str_1 = new array
+    foreach i in info
+        i.iter_prepare()
+    end
+        foreach i in range(0,12)
+            if i!=5 and i!=7 and i!=8 and i!= 11
+                str.push_back(info[0].name[i] + to_string(info[0].arr[i]))
+                continue
+            end
+            if i==5
+                str.push_back(info[0].name[i] + time_base64.timestamp2string(info[0].arr[i]))
+                continue
+            end
+            if i == 7 or i == 8
+                if info[0].arr[i] == "0" or info[0].arr[i] == 0
+                    str.push_back(info[0].name[i] + "否")
+                    continue
+                else
+                    str.push_back(info[0].name[i] + "是")
+                    continue
+                end
+            end
+            if i == 11
+                if info[0].arr[i] == "1" or info[0].arr[i] == 1
+                    str.push_back(info[0].name[i] + "待审核")
+                    continue
+                else
+                    str.push_back(info[0].name[i] + "出大问题")
+                    continue
+                end
+            end
+        end
+        var str_2 = new array
+        foreach i in range(info[2].arr.size)
+            str.push_back(info[2].name[i] + info[2].arr[i])
+        end
+        var str_3 = new array
+        foreach i in range(0, 7)
+            if i != 4 and i != 6
+                str.push_back(info[1].name[i] + info[1].arr[i])
+                continue
+            end
+            if i == 4
+                if info[1].arr[i] == "1" or info[1].arr[i] == 1
+                    str.push_back(info[1].name[i] + "待审核")
+                    continue
+                else
+                    str.push_back(info[1].name[i] + "驳回")
+                    continue
+                end
+            end
+            if i == 6
+                str.push_back(info[1].name[i] + time_base64.timestamp2string(info[1].arr[i]))
+            end
+        end
+    var temp = "##" + to_string(count)
+    list_box(temp, 0, str)
+end
+
+# 单条信息修改及提交窗口
+function change(info, count)
+    foreach i in info
+        i.iter_prepare()
+    end
+    var a = false
+    var b = false
+    begin_window("单条修改提交窗口",ch_opened,{})
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)/1.05))
+        var str_1 = new array
+        foreach i in range(0,12)
+            if i!=5 and i!=7 and i!=8 and i!= 11
+                str_1.push_back(info[0].arr[i])
+                continue
+            end
+            if i==5
+                str_1.push_back(time_base64.timestamp2string(info[0].arr[i]))
+                continue
+            end
+            if i == 7 or i == 8
+                if info[0].arr[i] == "0" or info[0].arr[i] == 0
+                    str_1.push_back("否")
+                    continue
+                else
+                    str_1.push_back("是")
+                    continue
+                end
+            end
+            if i == 11
+                if info[0].arr[i] == "1" or info[0].arr[i] == 1
+                    str_1.push_back("待审核")
+                    continue
+                else
+                    str_1.push_back("出大问题")
+                    continue
+                end
+            end
+        end
+        var str_2 = new array
+        foreach i in info[2].arr
+            str_2.push_back(i)
+        end
+        var str_3 = new array
+        foreach i in range(0, 7)
+            if i != 4 and i != 6
+                str_3.push_back(info[1].arr[i])
+                continue
+            end
+            if i == 4
+                if info[1].arr[i] == "1" or info[1].arr[i] == 1
+                    str_3.push_back("待审核")
+                    continue
+                else
+                    str_3.push_back("驳回")
+                    continue
+                end
+            end
+            if i == 6
+                str_3.push_back(time_base64.timestamp2string(info[1].arr[i]))
+            end
+        end
+        
+        a = button("提交##single_submit")
+        same_line()
+        b = button("取消##single_cancel")
+
+        foreach i in range(str_1.size)
+            var str = "##pro" + info[0].name[i]
+            text(info[0].name[i])
+            input_text(str, str_1[i], 100)
+        end
+        foreach i in range(str_2.size)
+            var str = "##pla" + info[2].name[i]
+            text(info[2].name[i])
+            input_text(str, str_2[i], 100)
+        end
+        foreach i in range(str_3.size)
+            var str = "##req" + info[1].name[i]
+            text(info[1].name[i])
+            input_text(str, str_3[i], 100)
+        end
+
+        foreach i in range(0, 12)
+            if i != 0 and i != 5 and i != 7 and i != 8 and i != 9 and i != 11 and i != 10
+                info[0].arr[i] = str_1[i]
+                continue
+            end
+            if i == 7 or i == 8
+                if str_1[i] == "否"
+                    info[0].arr[i] = 0
+                    continue
+                else
+                    info[0].arr[i] = 1
+                    continue
+                end
+            end
+        end
+
+        foreach i in range(0, 6)
+            info[2].arr[i] = str_2[i]
+        end
+
+        info[1].reason = str_3[5]
+        info[0].assign()
+        info[2].assign()
+
+        if b
+            ch_opened = false
+        end
+
+        if a
+            info[1].signals = 1
+            single_change(info[0], info[1], info[2])
+            sf_opened = true
+            var it = array.begin(uni)
+            foreach i in range(count)
+                array.iterator.next(it)
+            end
+            array.erase(uni, it)
+            selected_fix.clear()
+            foreach i in range(uni.size)
+                selected_fix[to_string(i)] = false
+            end
+        end
+    end_window()
+    if sf_opened
+        single_feedback(sf_opened)
+    end
+end
+
+# 批量修改下的单独编辑窗口，只能编辑无法提交
+function multi_change(info)
+    foreach i in info
+        i.iter_prepare()
+    end
+    var a = false
+    begin_window("单独编辑窗口",mc_opened,{})
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)/1.05))
+        var str_1 = new array
+        foreach i in range(0,12)
+            if i!=5 and i!=7 and i!=8 and i!= 11
+                str_1.push_back(info[0].arr[i])
+                continue
+            end
+            if i==5
+                str_1.push_back(time_base64.timestamp2string(info[0].arr[i]))
+                continue
+            end
+            if i == 7 or i == 8
+                if info[0].arr[i] == "0" or info[0].arr[i] == 0
+                    str_1.push_back("否")
+                    continue
+                else
+                    str_1.push_back("是")
+                    continue
+                end
+            end
+            if i == 11
+                if info[0].arr[i] == "1" or info[0].arr[i] == 1
+                    str_1.push_back("待审核")
+                    continue
+                else
+                    str_1.push_back("出大问题")
+                    continue
+                end
+            end
+        end
+        var str_2 = new array
+        foreach i in info[2].arr
+            str_2.push_back(i)
+        end
+        var str_3 = new array
+        foreach i in range(0, 7)
+            if i != 4 and i != 6
+                str_3.push_back(info[1].arr[i])
+                continue
+            end
+            if i == 4
+                if info[1].arr[i] == "1" or info[1].arr[i] == 1
+                    str_3.push_back("待审核")
+                    continue
+                else
+                    str_3.push_back("驳回")
+                    continue
+                end
+            end
+            if i == 6
+                str_3.push_back(time_base64.timestamp2string(info[1].arr[i]))
+            end
+        end
+
+        a = button("确定##multi_confirm")
+
+        foreach i in range(str_1.size)
+            var str = "##pro" + info[0].name[i]
+            text(info[0].name[i])
+            input_text(str, str_1[i], 100)
+        end
+        foreach i in range(str_2.size)
+            var str = "##pla" + info[2].name[i]
+            text(info[2].name[i])
+            input_text(str, str_2[i], 100)
+        end
+        foreach i in range(str_3.size)
+            var str = "##req" + info[1].name[i]
+            text(info[1].name[i])
+            input_text(str, str_3[i], 100)
+        end
+
+        foreach i in range(0, 12)
+            if i != 0 and i != 5 and i != 7 and i != 8 and i != 9 and i != 11 and i != 10
+                info[0].arr[i] = str_1[i]
+                continue
+            end
+            if i == 7 or i == 8
+                if str_1[i] == "否"
+                    info[0].arr[i] = 0
+                    continue
+                else
+                    info[0].arr[i] = 1
+                    continue
+                end
+            end
+        end
+
+        foreach i in range(0, 6)
+            info[2].arr[i] = str_2[i]
+        end
+
+        info[1].reason = str_3[5]
+        info[0].assign()
+        info[2].assign()
+
+        if a
+            mc_opened = false
+        end
+    end_window()
+end
+
+# 将批量修改的内容提交更新到数据库
+function multi_submit()
+    var pros = new array
+    var plas = new array
+    var reqs = new array
+    foreach i in range(uni.size)
+        if selected_fix[to_string(i)]
+            uni[i][1].signals = 1
+            pros.push_back(uni[i][0])
+            plas.push_back(uni[i][2])
+            reqs.push_back(uni[i][1])
+        end
+    end
+    multi_fix(pros, reqs, plas)
+end
+
+# 提交反馈弹窗
+function single_feedback(sf_opened)
+    var a = false
+    begin_window("提交反馈##sin_feed",sf_opened,{})
+        set_window_pos(vec2(get_monitor_width(0)/8,get_monitor_height(0)/8))
+        set_window_size(vec2(get_monitor_width(0)/4,get_monitor_height(0)/4))
+        set_window_focus()
+
+        text("提交成功")
+        text("")
+
+        a = button("确定##ch_feed")
+    end_window()
+    if a
+        sf_opened = false
+        ch_opened = false
+        break
+    end
+end
+
+# 批量提交反馈弹窗
+function multi_feedback()
+    var a = false
+    begin_window("批量提交反馈##multi_feedback",submit_opened,{})
+        set_window_pos(vec2(get_monitor_width(0)/8,get_monitor_height(0)/8))
+        set_window_size(vec2(get_monitor_width(0)/4,get_monitor_height(0)/4))
+        set_window_focus()
+
+        text("提交成功")
+        text("")
+
+        a = button("确定##mu_feed")
+    end_window()
+    if a
+        multi_opened = false
+        submit_opened = false
+        break
+    end
+end
 
 # 单条录入函数，传入一条要录入的条目数组以及管理员id。
 #================注意：该函数每次调用必须间隔至少一秒钟，否则将导致时间戳冲突从而造成申请表中的item_id混乱！！！================
@@ -140,6 +670,18 @@ function single_change(pro, req, pla)
     change_req(req)
 end
 
+function multi_fix(pros, reqs, plas)
+    check_places(plas)
+    
+    foreach i in range(pros.size)
+        pros[i].local_place = plas[i].uuid
+    end
+
+    change_pros(pros)
+
+    change_reqs(reqs)
+end
+
 # 封装了异常处理和索引格式检查的csv读取函数，传入文件路径和用于存储纯条目信息的空二维数组（注：不返回索引）。
 # gui设计时可重写该函数以适应图形化异常处理。
 function check_csv(path, values)
@@ -181,7 +723,6 @@ end
 
 # 以下函数为数据库交互函数，切勿贸然直接调用，请使用经过封装的录入函数。
 function check_place(loc)
-    var db = db_connector.start()
     db.just_exec("ALTER TABLE places AUTO_INCREMENT = 1")
     var stmt_1 = db.prepare("SELECT uuid FROM places WHERE group_admin=? AND dd_first=? AND dd_second=? AND dd_third=? AND dd_fourth=?")
     var stmt_2 = db.prepare("INSERT INTO places(group_admin,dd_first,dd_second,dd_third,dd_fourth) values(?,?,?,?,?)")
@@ -211,7 +752,6 @@ function check_place(loc)
 end
 
 function check_places(plas)
-    var db = db_connector.start()
     db.just_exec("ALTER TABLE places AUTO_INCREMENT = 1")
     var stmt_1 = db.prepare("SELECT uuid FROM places WHERE group_admin=? AND dd_first=? AND dd_second=? AND dd_third=? AND dd_fourth=?")
     var stmt_2 = db.prepare("INSERT INTO places(group_admin,dd_first,dd_second,dd_third,dd_fourth) values(?,?,?,?,?)")
@@ -243,7 +783,6 @@ function check_places(plas)
 end
 
 function add_pro(item)
-    var db = db_connector.start()
     db.just_exec("ALTER TABLE propertys AUTO_INCREMENT = 1")
     var stmt = db.prepare("INSERT INTO propertys(eq_name,eq_type,brand,wbdw,start_time,time_limit,sfjz,is_available,local_place,manager,signals) values(?,?,?,?,?,?,?,?,?,?,?)")
     item.iter_prepare()
@@ -255,7 +794,6 @@ function add_pro(item)
 end
 
 function add_pros(pros)
-    var db = db_connector.start()
     db.just_exec("ALTER TABLE propertys AUTO_INCREMENT = 1")
     var stmt = db.prepare("INSERT INTO propertys(eq_name,eq_type,brand,wbdw,start_time,time_limit,sfjz,is_available,local_place,manager,signals) values(?,?,?,?,?,?,?,?,?,?,?)")
     foreach item in pros
@@ -269,7 +807,6 @@ function add_pros(pros)
 end
 
 function add_req(info)
-    var db = db_connector.start()
     db.just_exec("ALTER TABLE request_tb AUTO_INCREMENT = 1")
     var stmt = db.prepare("INSERT INTO request_tb(item_id,requester,commiter,signals,reason,request_time) values(?,?,?,?,?,?)")
     info.iter_prepare()
@@ -281,7 +818,6 @@ function add_req(info)
 end
 
 function add_reqs(reqs)
-    var db = db_connector.start()
     db.just_exec("ALTER TABLE request_tb AUTO_INCREMENT = 1")
     var stmt = db.prepare("INSERT INTO request_tb(item_id,requester,commiter,signals,reason,request_time) values(?,?,?,?,?,?)")
     foreach info in reqs
@@ -296,7 +832,6 @@ end
 
 # 查找驳回信息函数，传入管理员id和一个空数组，返回包含多条驳回信息的二维数组，每一行可以在construct()函数中构建结构体。
 function find_reject(id, list)
-    var db = db_connector.start()
     var stmt = db.prepare("SELECT * FROM request_tb WHERE requester=? AND signals=2")
     stmt.bind(0,id)
     var res_req = stmt.exec()
@@ -304,8 +839,8 @@ function find_reject(id, list)
     foreach i in res_req
         item_ids.push_back(i[1].data)
     end
+    stmt = db.prepare("SELECT * FROM propertys WHERE uuid=?")
     foreach i in item_ids
-        stmt = db.prepare("SELECT * FROM propertys WHERE uuid=?")
         stmt.bind(0,i)
         var res = stmt.exec()
         res_pro.push_back(res[0])
@@ -313,8 +848,8 @@ function find_reject(id, list)
     foreach i in res_pro
         local_places.push_back(i[9].data)
     end
+    stmt = db.prepare("SELECT * FROM places WHERE uuid=?")
     foreach i in local_places
-        stmt = db.prepare("SELECT * FROM places WHERE uuid=?")
         stmt.bind(0,i)
         var res = stmt.exec()
         res_pla.push_back(res[0])
@@ -344,20 +879,29 @@ end
 
 # 修改物品信息表的函数，传入要修改的物品信息结构体，函数通过uuid确定要修改的条目。
 function change_pro(item)
-    var db = db_connector.start()
     var stmt = db.prepare("UPDATE propertys SET eq_name=?, eq_type=?, brand=?, wbdw=?, start_time=?, time_limit=?, sfjz=?, is_available=?, local_place=?, manager=?, signals=? WHERE uuid=?")
     item.iter_prepare()
     foreach i in range(1,12)
         stmt.bind(i-1, item.arr[i])
     end
-    item.clear_arr()
     stmt.bind(11,item.uuid)
     stmt.just_exec()
 end
 
+function change_pros(pros)
+    var stmt = db.prepare("UPDATE propertys SET eq_name=?, eq_type=?, brand=?, wbdw=?, start_time=?, time_limit=?, sfjz=?, is_available=?, local_place=?, manager=?, signals=? WHERE uuid=?")
+    foreach item in pros
+        item.iter_prepare()
+        foreach i in range(1,12)
+            stmt.bind(i-1, item.arr[i])
+        end
+        stmt.bind(11,item.uuid)
+        stmt.just_exec()
+    end
+end
+
 # 修改申请信息表的函数，传入要修改的申请信息结构体，函数通过item_id和requester确定要修改的条目。
 function change_req(info)
-    var db = db_connector.start()
     var stmt = db.prepare("UPDATE request_tb SET signals=1, reason=? WHERE item_id=? AND requester=?")
     stmt.bind(0,info.reason)
     stmt.bind(1,info.item_id)
@@ -365,8 +909,17 @@ function change_req(info)
     stmt.just_exec()
 end
 
+function change_reqs(reqs)
+    var stmt = db.prepare("UPDATE request_tb SET signals=1, reason=? WHERE item_id=? AND requester=?")
+    foreach info in reqs
+        stmt.bind(0,info.reason)
+        stmt.bind(1,info.item_id)
+        stmt.bind(2,info.requester)
+        stmt.just_exec()
+    end
+end
+
 function get_uuid_single(item)
-    var db = db_connector.start()
     var stmt = db.prepare("SELECT uuid FROM propertys WHERE manager = ? AND start_time = ?")
     stmt.bind(0,item.manager)
     stmt.bind(1,item.start_time)
@@ -375,7 +928,6 @@ function get_uuid_single(item)
 end
 
 function get_uuid_multi(group_admin, timestamp)
-    var db = db_connector.start()
     var stmt = db.prepare("SELECT uuid FROM propertys WHERE manager = ? AND start_time = ?")
     stmt.bind(0,group_admin)
     stmt.bind(1,timestamp)
@@ -405,7 +957,7 @@ function construct(arr, pro, req, pla)
     pla.assign()
 
     # 打印录入的结构体
-    show(pro, req, pla)
+    # show(pro, req, pla)
 end
 
 # 打印结构体到控制台
