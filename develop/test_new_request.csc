@@ -32,20 +32,18 @@ while !app.is_closed()
     app.render()
 end
 
-# var a = runtime.local_time()
 # new_request.check_csv("data.csv", values)
-# var b = runtime.local_time()
 
 # var db = db_connector.start()
 # db.exec("DELETE FROM places;") # 清空地点信息表
 # db.exec("DELETE FROM propertys;") # 清空物品信息表
 # db.exec("DELETE FROM request_tb;") # 清空申请信息表
 
+
 # foreach i in values
 #     new_request.single_insert(i, group_admin) # 单条录入
 #     runtime.delay(1000) #延迟等待一秒
 # end
-
 # var c = runtime.local_time()
 # new_request.multi_insert(values, group_admin) # 批量录入
 # var d = runtime.local_time()
