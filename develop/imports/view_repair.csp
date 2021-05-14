@@ -265,6 +265,7 @@ function report_repair(broken_item_id)
         #var broken_i1 = input_text("##broken_i1", broken_time_year, 100)
         var str = broken_time_year+"-"+broken_time_month+"-"+broken_time_day +" "+broken_time_hour+":"+broken_time_min
         var broken_i1 = input_text("##broken_i1", str, 100)
+        t_str_process(str)
         #same_line()
         #var broken_i2 = input_text("##broken_i2", broken_time_month, 100)
         #same_line()
@@ -295,11 +296,19 @@ function report_repair(broken_item_id)
             end
 
             #向数据库表格broken插入数据 uuid,repair_time、repair_method为空,另外三个与变量绑定
-            var broken_stmt = db.prepare("insert into broken values (null,?,?,?,null,null)")
+            var broken_stmt = db.prepare("insert into broken values (null,?,?,?,?,?)")
             broken_stmt.bind(0, broken_item_id)
-            #broken_stmt.bind(1, time_base64.to_timestamp(broken_time)) 
-            broken_stmt.bind(1, time_base64.to_timestamp(runtime.local_time())) 
+            #broken_stmt.bind(1, time_base64.to_timestamp(runtime.local_time())) 
+            @begin
+            broken_stmt.bind(1, time_base64.mytime_to_timestamp(broken_time_year.to_number()-1900,
+                                                                broken_time_month.to_number(),
+                                                                broken_time_day.to_number(),
+                                                                broken_time_hour.to_number(),
+                                                                broken_time_min.to_number(),0)) 
+            @end
             broken_stmt.bind(2, broken_reason)
+            broken_stmt.bind(3, "\\ ")
+            broken_stmt.bind(4, "\\ ")
             broken_stmt.just_exec()
 
             #修改broke_submit_success_state，使得出现提交成功提示字
@@ -319,6 +328,82 @@ function report_repair(broken_item_id)
     end_window()   
 end
 
+function broken_table_ifo()
+    import db_connector
+    var db = db_connector.start()
+    if db == null
+        system.out.println("连接失败,程序终止！")
+        system.exit(1)
+    end
+
+    var test_res = db.exec("select * from broken")
+    return test_res
+end
+
+function show_broken_table(test_res)
+    var w5_is_open = true
+    begin_window("broken_table##w5",w5_is_open,{})
+        set_window_pos(vec2(0,0))
+        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        var data_in_line = ""
+        foreach i in test_res
+            for j=0,j<i.size,++j
+                if j == 2
+                    data_in_line += time_base64.timestamp2string(i.at(j).data)
+                else
+                    data_in_line += i.at(j).data
+                end
+                data_in_line += '\t'
+            #   data_in_line += j.data + '\t'
+            end
+            text(data_in_line)
+            data_in_line.clear()
+        end
+    end_window()
+end
+
+function t_str_process(str)
+    var temp_str = ""
+    var i = 0
+    while str[i] != '-' && i < str.size
+        temp_str += str[i]
+        i++
+    end
+    broken_time_year = temp_str
+    i++
+    temp_str.clear()
+
+    while str[i] != '-' && i < str.size
+        temp_str += str[i]
+        i++
+    end
+    broken_time_month = temp_str
+    i++
+    temp_str.clear()
+
+    while str[i] != ' ' && i < str.size
+        temp_str += str[i]
+        i++
+    end
+    broken_time_day = temp_str
+    i++
+    temp_str.clear()
+
+    while str[i] != ':' && i < str.size
+        temp_str += str[i]
+        i++
+    end
+    broken_time_hour = temp_str
+    i++
+    temp_str.clear()
+
+    while str[i] != ' ' && i < str.size
+        temp_str += str[i]
+        i++
+    end
+    broken_time_min = temp_str
+    
+end
 
 function data_supply(one_record)
     #该函数作用为：工作完成后，补充维修相关信息
@@ -383,3 +468,5 @@ function data_supply(one_record)
         end
     end_window()   
 end
+
+
