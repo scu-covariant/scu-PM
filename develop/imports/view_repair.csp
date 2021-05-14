@@ -56,6 +56,8 @@ var logs_requester = new number
 var logs_detail = ""
 var finish_writing_state = false
 var finish_writing_success_state = false
+var requester = ""
+var detail = ""
 #var logs_signals = new number
 
 function all_items_ifo(manager_id)
@@ -332,7 +334,7 @@ function data_supply(one_record)
         #直接生成当前时间
         finish_time = runtime.local_time()
         finish_time_year = to_string(finish_time.year+1900)
-        finish_time_month = to_string(finish_time.month+1)
+        finish_time_month = to_string(finish_time.mon+1)
         finish_time_day = to_string(finish_time.mday)
         logs_time=finish_time_year+"-"+finish_time_month+"-"+finish_time_day
         text("填表时间"+logs_time)
@@ -359,17 +361,18 @@ function data_supply(one_record)
                 system.exit(1)
             end
         
-        #向数据库logs表填信息
-        #logs_signals = 2
-        var logs_stmt = db.prepare("insert into logs values (null,?,?,null,?,?)")
-        logs_stmt.bind(0,logs_time)
-        logs_stmt.bind(1,logs_requester)
-        logs_stmt.bind(2,logs_detail)
-        logs_stmt.bind(3,2)
-        logs_stmt.just_exec()
-        finish_writing_success_state = true
-        #下次渲染不再调用数据库连接
-        finish_writing_state = false
+            #向数据库logs表填信息
+            #logs_signals = 2
+            var logs_stmt = db.prepare("insert into logs values (null,?,?,null,?,?)")
+            logs_stmt.bind(0,logs_time)
+            logs_stmt.bind(1,logs_requester)
+            logs_stmt.bind(2,logs_detail)
+            logs_stmt.bind(3,2)
+            logs_stmt.just_exec()
+            finish_writing_success_state = true
+            #下次渲染不再调用数据库连接
+            finish_writing_state = false
+        end
 
         if finish_writing_success_state
             text("表单上传成功！")
