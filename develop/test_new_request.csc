@@ -17,12 +17,26 @@ system.file.remove("./imgui.ini")
 # var req = new structs.request
 var group_admin = 46 # 管理员id，后期通过封装好的函数参数获取
 
-var app=window_application(get_monitor_width(0)*0.75,get_monitor_height(0)*0.75,"开发样例")
+var app=window_application(get_monitor_width(0),get_monitor_height(0),"开发样例")
 var font=add_font_extend_cn(imgui_font.source_han_sans, 40)
 set_font_scale(1.2)
 while !app.is_closed()
     app.prepare()
     push_font(font)
+
+    if button("录入")
+        new_request.req_opened = true
+    end
+
+    text("")
+
+    if button("修改")
+        new_request.fix_opened = true
+    end
+
+    if new_request.req_opened
+        new_request.new_req(group_admin,app)
+    end
 
     if new_request.fix_opened
         new_request.fix(group_admin)
