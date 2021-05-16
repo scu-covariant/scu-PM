@@ -986,7 +986,7 @@ function check_csv(path, values, erro)
     var std = {"设备名称", "规格型号", "品牌", "维保单位", "质保期限", "是否建账", "是否可备用", "校区", "教学楼", "层数", "门牌号", "提交原因"}
     var index = {}
     erro = csv.read_csv(path, index, values)
-    if erro != 0
+    # if erro != 0
     #     if erro ==-1
     #         system.out.print("文件内容中包含英文逗号或英文双引号。\n")
     #         system.exit(1)
@@ -1277,5 +1277,4 @@ function show(pro, req, pla)
         system.out.print(" ")
     end
     system.out.print("\n")
-end
 end
