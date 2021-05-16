@@ -6,7 +6,6 @@ import imgui_font
 using system
 using imgui
 var db = db_connector.start()
-# var window_opened2=true
 var window_opened_reson=false
 var window_accept_confirm=true
 var window_reject_confirm=true
@@ -55,17 +54,12 @@ function review_commit_write_log(flag,commiter)
         stmt.just_exec()
     end
 end
-##多选
-function choose(text,flag)
-    check_box(text,flag)
-end
 ##通过逻辑
 function accept()
     ##物品表中signals改为2：正常使用
     var stmt1=db.prepare("UPDATE propertys SET signals=2 where uuid=?")
     foreach i in range(res.size)
         if(select[to_string(res[i][0].data)])
-            # db.just_exec("UPDATE propertys SET signals=2 where uuid=\""+res[i][1].data+"\"")
             stmt1.bind(0,res[i][1].data)
             stmt1.just_exec()
         end
@@ -74,9 +68,9 @@ function accept()
     var stmt2=db.prepare("DELETE FROM request_tb WHERE uuid=?")
     foreach i in range(res.size)
         if(select[to_string(res[i][0].data)])
-        # db.just_exec("DELETE FROM request_tb WHERE uuid=\""+res[i][0].data+"\"")
         stmt2.bind(0,res[i][0].data)
         stmt2.just_exec()
+        db.just_exec("ALTER TABLE request_tb AUTO_INCREMENT = 1")
         end
     end
     read_db()
@@ -88,7 +82,6 @@ function reject()
     var stmt=db.prepare("UPDATE request_tb SET signals='2' where uuid=?")
     foreach i in range(res.size)
         if(select[to_string(res[i][0].data)])
-            # db.just_exec("UPDATE request_tb SET signals='2' where uuid=\""+res[i][1].data+"\"")
             stmt.bind(0,res[i][1].data)
             stmt.just_exec()
         end
@@ -133,7 +126,6 @@ function begin_reson_window()
             var stmt= db.prepare("UPDATE request_tb SET reason=? where uuid=?")
             foreach i in range(res.size)
                 if(select[to_string(res[i][0].data)])
-                    # db.just_exec("UPDATE request_tb SET reason=\""+reson+"\" where uuid=\""+res[i][1].data+"\"")
                     stmt.bind(0,reson)
                     stmt.bind(1,res[i][1].data)
                     stmt.just_exec()
@@ -157,6 +149,18 @@ function begin_review_commit_window(commiter,window_opened2)
     if(button("刷新##get_new"))
         read_db()
     end
+    same_line()
+    if(button("全选##all_select"))
+        foreach i in range(res.size)
+            select[to_string(res[i][0].data)]=true
+        end
+    end
+    same_line()
+    if(button("取消全选##cancel_all_select"))
+        foreach i in range(res.size)
+            select[to_string(res[i][0].data)]=false
+        end
+    end
     if(!window_opened2)
         window_opened2=false
     break
@@ -166,7 +170,7 @@ function begin_review_commit_window(commiter,window_opened2)
     # set_window_focus()
     foreach i in range(res.size)
         if(res[i][4].data=="1")
-            choose("申请人："+res[i][2].data+"  "+"提交原因："+res[i][5].data,select[to_string(res[i][0].data)])
+            check_box("申请人："+res[i][2].data+"  "+"提交原因："+res[i][5].data,select[to_string(res[i][0].data)])
         end
         ##多选框直接打出提交原因
     end
@@ -177,10 +181,6 @@ function begin_review_commit_window(commiter,window_opened2)
             set_window_pos(vec2(get_monitor_width(0)*0.3,get_monitor_height(0)*0.3))
             set_window_size(vec2(500,300))
             set_window_focus()
-            # if(!window_accept_confirm)
-            #     accept_window_flag=false
-            #     break
-            # end
             text("是否确定通过？")
             if (button("确定##y"))
                 accept_window_flag=false
@@ -203,10 +203,6 @@ function begin_review_commit_window(commiter,window_opened2)
             set_window_pos(vec2(get_monitor_width(0)*0.3,get_monitor_height(0)*0.3))
             set_window_size(vec2(500,300))
             set_window_focus()
-            # if(!window_reject_confirm)
-            #     reject_window_flag=false
-            #     break
-            # end
             text("是否确定驳回？")
             if (button("确定##y"))
                 reject_window_flag=false
