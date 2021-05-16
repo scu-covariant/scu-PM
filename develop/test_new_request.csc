@@ -9,18 +9,6 @@ var pro = new structs.property
 var pla = new structs.place
 var req = new structs.request
 
-<<<<<<< HEAD
-new_request.check_csv("data.csv", values)
-
-var db = db_connector.start()
-var res = db.exec("select * from propertys")
-foreach i in res
-    foreach j in i
-        system.out.print(j.data+' ')
-    end
-    system.out.print("\n")
-end
-=======
 var a = runtime.local_time()
 new_request.check_csv("data.csv", values)
 var b = runtime.local_time()
@@ -36,9 +24,6 @@ db.exec("DELETE FROM request_tb;") # 清空申请信息表
 #     runtime.delay(1000) #延迟等待一秒
 # end
 
-<<<<<<< HEAD
-new_request.multi_insert(values, group_admin) # 批量录入
-=======
 var c = runtime.local_time()
 new_request.multi_insert(values, group_admin) # 批量录入
 var d = runtime.local_time()
