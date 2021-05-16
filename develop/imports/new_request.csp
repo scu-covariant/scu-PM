@@ -17,6 +17,7 @@ var mc_opened = false # 控制单独编辑窗口
 var wt_opened = false # 控制批量提交等待弹窗
 var submit_flag = false # 控制对批量提交函数的调用
 var find_rej = true # 在初始化时控制查找被驳回条目
+var check_all = false # 记录全选状态
 var mark = -1 # 记录要处理的条目编号
 
 var uni = new array # 联合结构体数组容器
@@ -71,6 +72,20 @@ function fix_request(group_admin)
             multi_opened = true
         end
         text("")
+        if button("全选/取消全选")
+            if check_all
+                foreach i in range(uni.size)
+                    selected_fix[to_string(i)] = false
+                end
+                check_all = false
+            else
+                foreach i in range(uni.size)
+                    selected_fix[to_string(i)] = true
+                end
+                check_all = true
+            end
+        end
+        text("")
         foreach i in range(uni.size)
             check_box(to_string(i+1), selected_fix[to_string(i)])
             same_line()
@@ -94,10 +109,15 @@ function fix_request(group_admin)
         end
     end_window()
     if ch_opened
-        change(uni[mark], mark)
+        if mark < uni.size
+            change(uni[mark], mark)
+        end
     end
     if multi_opened
         multi_deal()
+    end
+    if sf_opened
+        single_feedback(sf_opened)
     end
 end
 
@@ -522,6 +542,7 @@ end
 
 # 提交反馈弹窗
 function single_feedback(sf_opened)
+    ch_opened = false
     var a = false
     begin_window("提交反馈##sin_feed",sf_opened,{})
         set_window_pos(vec2(get_monitor_width(0)/8,get_monitor_height(0)/8))
