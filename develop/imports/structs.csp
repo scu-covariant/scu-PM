@@ -16,6 +16,7 @@ class property
     var signal = 0
 
     var arr = new array
+    var name = {"唯一id                      ", "设备名称                ", "规格型号                ", "品牌                         ", "维保单位                ", "启用时间                ", "质保期限                ", "是否建账                ", "是否可备用             ", "当前地点                ", "小组管理者id         ", "状态情况                "}
 
     function initialize()
     end
@@ -67,9 +68,9 @@ class place
     var dd_second = ""
     var dd_third = 0
     var dd_fourth = ""
-    var db_name = "places"
 
-    var arr = new array  
+    var arr = new array 
+    var name = {"地点唯一id             ", "地点管理员id          ", "校区                       ", "教学楼                    ", "楼层                               ", "门牌号                   "}
 
     function initialize()
     end
@@ -112,6 +113,7 @@ class request
     var request_time = ""
 
     var arr = new array
+    var name = {"申请唯一id             ", "物品id                      ", "申请者id                   ", "审核者id                   ", "审批状态                ", "理由说明                ", "首次提交申请时间   "}
 
     function initialize()
     end
