@@ -2,5 +2,13 @@
     "include":["develop"],
     "require":"1.0.0",
     "target":{
+        "pm":{
+            "file":"PM.csc",
+            "no-opt": false,
+            "compile-only":false,
+            "import_path":["develop/imports"],
+            "require" : ["imgui","csdbc_mysql"],
+            "arguments":""
+        }
     }
 }

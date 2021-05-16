@@ -33,6 +33,14 @@
             "import_path":["imports"],
             "require" : [],
             "arguments":""
+        },
+        "review_commit":{
+            "file":"test_review_commit.csc",
+            "no-opt": false,
+            "compile-only":false,
+            "import_path":["imports"],
+            "require" : ["imgui","csdbc_mysql"],
+            "arguments":""
         }
     }
 }
