@@ -982,25 +982,26 @@ end
 
 # 封装了异常处理和索引格式检查的csv读取函数，传入文件路径和用于存储纯条目信息的空二维数组（注：不返回索引）。
 # gui设计时可重写该函数以适应图形化异常处理。
-function check_csv(path, values)
+function check_csv(path, values, erro)
     var std = {"设备名称", "规格型号", "品牌", "维保单位", "质保期限", "是否建账", "是否可备用", "校区", "教学楼", "层数", "门牌号", "提交原因"}
     var index = {}
-    var erro = csv.read_csv(path, index, values)
+    erro = csv.read_csv(path, index, values)
     if erro != 0
-        if erro ==-1
-            system.out.print("文件内容中包含英文逗号或英文双引号。\n")
-            system.exit(1)
-        end
-        if erro == -2
-            system.out.print("读取文件时出错，请检查路径是否正确。\n")
-            system.exit(1)
-        end
-    end
+    #     if erro ==-1
+    #         system.out.print("文件内容中包含英文逗号或英文双引号。\n")
+    #         system.exit(1)
+    #     end
+    #     if erro == -2
+    #         imgui.text("读取文件时出错，请检查路径是否正确。\n")
+    #         system.exit(1)
+    #     end
+    # end
 
-    if array.size(index) != 12
-        system.out.println("格式错误，表格应该为12列。")
-        system.exit(1)
-    end
+    # if array.size(index) != 12
+    #     erro = -3
+    #     system.out.println("格式错误，表格应该为12列。")
+    #     system.exit(1)
+    # end
     var sub = 0
     foreach i in index
         if i != std[sub]
@@ -1276,4 +1277,5 @@ function show(pro, req, pla)
         system.out.print(" ")
     end
     system.out.print("\n")
+end
 end
