@@ -1,0 +1,96 @@
+package time_base64
+import codec.base64.standard as base64
+import codec.json as json
+# 本包用于将本地时间转换为json并封装为base64代码，然后传入数据库存储
+# 并有反向解码为cov变量的能力，，
+
+# Time
+# 所有传入参数为t的对象均为 runtime下的time对象。参考文档和智锐erp。
+# 补齐两位数的函数
+
+# time类型的成员变量
+# number sec([time_type])
+# *分后之秒，范围是[0, 60]
+
+# number min([time_type])
+# *时后之分，范围是[0, 59]
+
+# number hour([time_type])
+# *自午夜起之时，范围是[0, 23]
+
+# number wday([time_type])
+# *自星期日起之日，范围是[0, 6]
+
+# number mday([time_type])
+# *月之日，范围是[1, 31]
+
+# number yday([time_type])
+# *自 1 月 1 日起之日，范围是[0, 365]
+
+# number mon([time_type])
+# *自一月起之月，范围是[0, 11]
+
+# number year([time_type])
+# *自 1900 起之年
+
+# boolean is_dst([time_type])
+# *是否为夏令时
+
+
+namespace config
+    var mons = {"一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"}
+    var days = {"星期天", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"}
+end
+# 用于拼接对齐
+function align(str)
+    if str.size == 1
+        return "0" + str
+    else
+        return str
+    end
+end
+
+# function get_time_str(t)
+#     var hour = null
+#     if t.hour < 13
+#         hour = " 上午 " + align(to_string(t.hour))
+#     else
+#         hour = " 下午 " + align(to_string(t.hour - 12))
+#     end
+#     return to_string(t.year + 1900) + "年" + config.mons[t.mon] + to_string(t.mday) + "日 " + config.days[t.wday] + align(hour) + ":" + align(to_string(t.min)) + ":" + align(to_string(t.sec))
+# end
+# 将时间转换为时间戳
+function to_timestamp(t)
+@begin
+    return base64.encode(json.to_string(json.from_var({
+        "year": t.year,
+        "day" : t.mday,
+        "mon":t.mon+1,
+        "hour": t.hour,
+        "min" : t.min
+    }.to_hash_map())))
+@end
+end
+#从时间戳切换到hash_map变量
+function from_timestamp(t)
+    return json.to_var(json.from_string(base64.decode(t)))
+end
+# 时间戳（base码）到字符串
+function timestamp2string(t)
+    var ts = from_timestamp(t)
+    var hour = null
+    if ts.hour < 13
+        hour = " 上午 " + align(to_string(ts.hour))
+    else
+        hour = " 下午 " + align(to_string(ts.hour - 12))
+    end
+    return to_string(ts.year + 1900)+ "年"+ to_string(ts.mon) + "月" + to_string(ts.day)+"日"+ align(hour) + " 时 " + align(to_string(ts.min)) + " 分" 
+end
+
+function get_local_timestamp()
+    return to_timestamp(runtime.local_time())
+end
+
+function get_utc_timestamp()
+    return to_timestamp(runtime.utc_time())
+end
