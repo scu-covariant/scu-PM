@@ -1,1 +1,0 @@
-runtime.local_time()
