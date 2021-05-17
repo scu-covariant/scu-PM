@@ -41,7 +41,15 @@
             "import_path":["imports"],
             "require" : ["imgui","csdbc_mysql"],
             "arguments":""
-        }
+        },
+        "new_request":{
+            "file":"test_new_request.csc",
+            "no-opt": false,
+            "compile-only":false,
+            "import_path":["imports"],
+            "require" : ["imgui","csdbc_mysql"],
+            "arguments":""
+        }        
     }
 }
 
