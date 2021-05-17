@@ -1,0 +1,507 @@
+#!/usr/bin/env cs
+#
+# Covariant Script Auto Make
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Copyright (C) 2017-2021 Xiaochen Ma(马晓晨), Michael Lee(李登淳)
+#
+# Github:  @SunnyHaze, @mikecovlee
+# Website: http://covscript.org.cn
+
+import codec.json as json
+import process
+import regex
+
+constant csmake_version = "1.0.0"
+constant default_name = "CSMAKE.json"
+# global vars
+var cmd_args = context.cmd_args
+var cur_dir = runtime.get_current_dir()
+constant sepa = system.path.separator
+constant deli = system.path.delimiter
+
+namespace env
+    function user_home()
+        if system.is_platform_windows()
+            return system.getenv("USERPROFILE")
+        else
+            return system.getenv("HOME")
+        end
+    end
+    function platform()
+        if system.is_platform_windows()
+            return "windows"
+        end
+        if system.is_platform_linux()
+            return "linux"
+        end
+        if system.is_platform_darwin()
+            return "macos"
+        end
+    end
+end
+
+namespace utils
+    function open_json(path)
+        var ifs = iostream.ifstream(path)
+        return json.to_var(json.from_stream(ifs))
+    end
+    function save_json(val, path)
+        var ofs = iostream.ofstream(path)
+        ofs.print(json.to_string(json.from_var(val)))
+    end
+    function filter(str, cond)
+        var _s = ""
+        foreach ch in str
+            if cond(ch)
+                _s += ch
+            end
+        end
+        return move(_s)
+    end
+    var url_reg = regex.build("^[a-zA-z]+://([\\w.]+)[^\\s]*$")
+    function check_url(url)
+        return !utils.url_reg.match(url).empty()
+    end
+    function get_hostname(url)
+        var m = utils.url_reg.match(url)
+        if !m.empty()
+            return m.str(1)
+        else
+            return new string
+        end
+    end
+end
+
+namespace config
+    var cancel_prompt = false
+    function compose_home()
+        return "./csmake-cache"
+    end
+    function compose_avail()
+        return "./csmake-cache/__remote_pkg"
+    end
+    function create()
+        system.path.mkdir_p(config.compose_home())
+        iostream.ofstream(config.compose_avail()).println("system.run(\"cspkg -i --show-avail\")")
+    end
+    function init()
+        if !system.file.exist(config.compose_avail())
+            config.create()
+        end
+    end
+    function get_web_pkgs()
+        var pro = process.exec("cs",{config.compose_home() + "/__remote_pkg"})
+        pro.wait()
+        system.file.remove(config.compose_home() + sepa + "__remote_pkg" )
+        var ifs = pro.out()
+        var text = ""
+        var web_pkg = new array
+        function fliter(str)
+            var nstr = new string
+            foreach ch in str
+                if !ch.iscntrl()
+                    nstr += ch
+                end
+            end
+            return move(nstr)
+        end
+        while !ifs.eof()
+            text = ifs.getline()
+            var star_reg = regex.build("\\*|\t")
+            text = fliter(star_reg.replace(text,""))
+            web_pkg.push_back(text)
+        end
+        web_pkg.pop_front()
+        web_pkg.pop_back()
+        if web_pkg.size == 0
+            csmake_log("CSMAKE:Reach Internet packages failed. Check your network connection!")
+            system.exit(0)
+        end
+        web_pkg.pop_back()
+        return web_pkg.to_hash_set()
+    end
+end
+
+config.init()
+
+namespace log_impl
+    var log = null
+    function open_log()
+        if log_impl.log == null
+            log_impl.log = iostream.fstream(config.compose_log(), iostream.openmode.app)
+        end
+    end
+end
+
+function csmake_print(msg)
+    if !config.cancel_prompt
+        system.out.println(msg)
+    end
+end
+
+function csmake_log(msg)
+    system.out.println(msg)
+end
+
+function draw_separator()
+    for i = 1, i <= system.console.terminal_width(), ++i
+        system.out.print("-")
+    end
+    system.out.println("")
+end
+
+# 用于递归初始化target_map
+namespace init_includes
+    function in_dir(path,goal)
+        var npath = ""
+        if path != ""
+            npath = path +sepa+ goal
+        else
+            npath = path + goal
+        end
+        return npath
+    end
+    function get_include(path)
+        var npath = init_includes.in_dir(path,default_name)
+        try 
+            return utils.open_json(npath)["include"]
+        catch e
+            throw runtime.exception("CSMAKE:json file error! \n   Please check the path or the syntax error of json file.")
+        end
+    end
+    function find_all_includes(path)
+        var include_list = new array
+        var target_map = new hash_map
+        var tmp_target = utils.open_json(init_includes.in_dir(path,default_name))["target"]
+        foreach i in tmp_target
+            i.second.insert("path",path)
+            target_map.insert(i.first,i.second)
+        end
+        var current_include = init_includes.get_include(path)
+        if current_include.size == 0
+            return target_map
+        else
+            foreach p in current_include
+                var dir_p = p
+                p = init_includes.in_dir(path,p)
+                var return_maps = init_includes.find_all_includes(p)
+                foreach t in return_maps
+                    if target_map.exist(t.first)
+                        throw runtime.exception("CSMAKE:target " + t.first + " redefinition Error\n  Check the all CSMAKE.json files in the including tree")
+                    end
+                    t.second["file"] = dir_p + sepa + t.second["file"]
+                    foreach import_path in t.second["import_path"]
+                        import_path = init_includes.in_dir(dir_p,import_path)
+                    end
+                    target_map.insert(t.first,t.second)
+                end
+
+            end
+        end
+        return target_map
+    end
+end
+
+function show_version(opt, args)
+    @begin
+        system.out.println(
+            "Covariant Script Auto Make " + csmake_version + "\n" +
+            "\nEnvironment Variables:\n" +
+            "            OS: " + env.platform() + "\n" +
+            "          ARCH: " + env.arch() + "\n" +
+            "     USER_HOME: " + env.user_home() + "\n" +
+            "COVSCRIPT_HOME: " + env.covscript_home() + "\n"
+        )
+    @end
+end
+
+function show_help(opt, args)
+    @begin
+        system.out.println(
+            "\nUsage: csmake <commands> ... [ARGS] ...\n" +
+            "       You must make sure that there is a \"CSMAKE.json\" in current path.\n" +
+            "\nCommands:\n" +
+            "    run          | -r  <target>  <options>... Run CSMAKE to <target> in CSMAKE.json file in local path.\n" +
+            "    help         | -h                         Show help menu.\n" +
+            "    version      | -v                         Show version information.\n" +
+            "    create       | -c                         Create a default CSMAKE.json file in current path.\n" +
+            "    list         | -l                         Show all the targets in the CSMAKE.json in current path\n" +
+            "\nCSMAKE run Options:\n"+
+            "    compile-only | --cponly                   Only compile the target but not run."
+        )
+    @end
+end
+
+## 获取云端所有包
+var web_pkg = config.get_web_pkgs()
+var cspkg_list = utils.open_json(env.user_home() + "/.cspkg/packages.json")
+
+function require(target_map,tar)
+    var target = target_map[tar]
+    var require_path = new hash_set
+    var try_install = new hash_set
+    if target.exist("require")
+        foreach i in target["require"]
+            if target_map.exist(i)
+                require_path.insert(target_map[i]["path"])
+                var tmp_req = require(target_map,i)
+                foreach path in tmp_req
+                    require_path.insert(path)
+                end
+            else
+                if !cspkg_list.exist(i)
+                    if web_pkg.exist(i)
+                        csmake_log("CSMAKE:Auto installing package ["+ i + "] from CSPKG...")
+                        draw_separator()
+                        csmake_log("CSMAKE:WARNING!!! This command need to run with rights of administrator!!!")
+                        draw_separator()
+                        var exec = "cspkg -i " + i + " --yes"
+                        system.run(exec)
+                        try_install.insert(i)
+                    else
+                        throw runtime.exception("CSMAKE:Can not find the package or target [" + i + "]!\n    Please check the \"require\" spelling in target \"" + tar +"\" !" )
+                    end
+                else
+                    csmake_log("CSMAKE:Target \""+tar+"\" required Package ["+i+"], it has been fonund in local CSPKG!")
+                end
+            end
+        end
+    end
+    cspkg_list = utils.open_json(env.user_home() + "/.cspkg/packages.json")
+    if try_install.size != 0
+        foreach i in try_install
+            if !cspkg_list.exist(i)
+                draw_separator()
+                csmake_log("CSMAKE:Install packages failed. (Try to run with rights of administrator)")
+                draw_separator()
+                system.exit(0)
+            end
+        end
+    end
+    return require_path
+end
+
+### showfunction ends
+function make(opt,args)
+    draw_separator()
+    csmake_log("CSMAKE running in path [" + cur_dir +"], target ["+ args[1] +"], CSMAKE Version: "+ csmake_version)
+    draw_separator()
+    var exec = "cs -i \""
+    var target_map = init_includes.find_all_includes("")
+    if args.size == 1
+        throw runtime.exception("CSMAKE:Not enough args error")
+    else
+        if target_map.exist(args[1])
+            var tmp_path = target_map[args[1]]["import_path"].to_hash_set()
+            var req_path = require(target_map,args[1])
+            tmp_path = hash_set.merge(tmp_path,req_path)
+            var cnt = 0
+            foreach include in tmp_path
+                if cnt == tmp_path.size -1
+                    exec = exec + include
+                else
+                    exec = exec + include + deli
+                end
+                cnt++
+            end
+            exec = exec + "\" "
+            var target = target_map[args[1]]
+            draw_separator()
+            if target.exist("no-opt") && target["no-opt"] == true
+                exec += "-o "
+            end
+            if compile_but_not_run ||(target.exist("compile-only") && target["compile-only"] )== true
+                compile_but_not_run = true
+                exec += "-c "
+                csmake_log("You are running with compile-only mode!")
+            end
+            
+            exec += target_map[args[1]]["file"]
+            exec += " " + target_map[args[1]]["arguments"]
+        end
+    end
+    csmake_log("All requirment satisfied, start program!")
+    draw_separator()
+    if system.file.exist(target_map[args[1]]["file"])
+        try
+            system.run(exec)
+            if compile_but_not_run
+                csmake_log("CSMAKE:Congratulations! Compile succeed! CSMAKE exit.")
+            end
+        catch e
+            csmake_log(e.what)
+        end
+    else
+        throw runtime.exception("CSMAKE: Can't find file ["+target_map[args[1]]["file"]+"] in local path!")
+    end
+end
+
+function ofstream_csmake()
+    var ofs = iostream.ofstream(cur_dir + sepa + "CSMAKE.json")
+    @begin
+    ofs.println(
+        "{\n" +
+        "    \"include\":[],\n" +
+        "    \"require\":\""+ csmake_version +"\",\n" +
+        "    \"target\":{\n" +
+        "        \"a\":{\n" +
+        "            \"file\":\"a.csc\",\n" +
+        "            \"no-opt\": false,\n" +
+        "            \"compile-only\":false,\n" +
+        "            \"import_path\":[\"imports\"],\n" +
+        "            \"require\" : [\"b\", \"imgui\"],\n" +
+        "            \"arguments\":\"\"\n" +
+        "        }\n" +
+        "    }\n" +
+        "}\n"
+        )
+    @end
+end
+
+function create_csmake(opt,args)
+    if system.file.exist(cur_dir + sepa + "CSMAKE.json")
+        system.out.println("There already is a CSMAKE.json file in current dir.")
+        system.out.println("\nDo you want to recover it?[y/n]")
+        if system.console.getch().tolower() != 'y'
+            csmake_log("CSMAKE: Creation of CSMAKE.json canceled.")
+            system.exit(0)
+        end
+    end
+    ofstream_csmake()
+    csmake_log("CSMAKE: CSMAKE.json created in ["+ cur_dir + "].")
+end
+
+function run(opt,args)
+    if system.file.exist(cur_dir + sepa + default_name)
+        var target_map = init_includes.find_all_includes("")
+        var first_mkjson = utils.open_json(default_name)["target"]
+        if target_map.exist(args[0])
+            make({},{"csmake",args[0]})
+        else
+            csmake_log("CSMAKE:No target ["+args[0]+"]. Please check spelling!")
+            show_help(null,null)
+        end
+        system.exit(0)
+    else
+        draw_separator()
+        csmake_log("CSMAKE:Error !!! No CSMAKE.json file in current path!")
+        draw_separator()
+        show_help(null, null)
+        system.exit(0)
+    end
+end
+
+function show_targets(opt,args)
+    if system.file.exist(cur_dir + sepa + default_name)
+        var target_map = init_includes.find_all_includes("")
+        draw_separator()
+        draw_separator()
+        system.out.println("CSMAKE: Show all the targets in current path.")
+        draw_separator()
+        var cnt = 1
+        foreach i in target_map
+            system.out.println("No."+cnt+" :\t[" + i.first + "]\n\tfile : " + i.second["file"] +"\n\trequires : " +i.second["require"])
+            draw_separator()
+            cnt++
+        end
+        draw_separator()
+        system.exit(0)
+    else
+        draw_separator()
+        csmake_log("CSMAKE:Error !!! No CSMAKE.json file in current path!")
+        draw_separator()
+        show_help(null, null)
+        system.exit(0)
+    end
+end
+
+@begin
+var csmake_cmds = {
+    "run" : run,
+    "-r" : run,
+    "help": show_help,
+    "-h": show_help,
+    "version" : show_version,
+    "-v" : show_version,
+    "create" : create_csmake,
+    "-c" : create_csmake,
+    "list" : show_targets,
+    "-l" : show_targets
+}.to_hash_map()
+@end
+
+var csmake_options = {}
+var csmake_args = {}
+var compile_but_not_run = false
+
+if cmd_args.size == 1
+    if system.file.exist(cur_dir + sepa + default_name)
+        var target_map = init_includes.find_all_includes("")
+        var first_mkjson = utils.open_json(default_name)["target"]
+        var cnt = 0
+        var idx = ""
+        var csc_reg = regex.build(".csc$")
+        foreach tar in first_mkjson
+            if !csc_reg.match(tar.second["file"]).empty()
+                cnt++
+                idx = tar.first
+            end
+        end
+        if cnt == 1
+            make({},{"csmake",idx})
+        else
+            csmake_log("CSMAKE:Without any argument and the number of \"*.csc\" file is not 1.")
+            show_help(null,null)
+        end
+        system.exit(0)
+    else
+        draw_separator()
+        csmake_log("CSMAKE:Error !!! No CSMAKE.json file in current path!")
+        draw_separator()
+        show_help(null, null)
+        system.exit(0)
+    end
+end
+
+var target_function = null
+
+if csmake_cmds.exist(cmd_args[1])
+    target_function = csmake_cmds[cmd_args[1]]
+else
+    csmake_log("CSMAKE: Undefined argument! Use \"csmake -h\" to get help. CSMAKE exit! ")
+    system.exit(0)
+end
+
+block
+    var idx = 2
+    while idx != cmd_args.size
+        if cmd_args[idx].find("--", 0) != 0
+            csmake_args.push_back(cmd_args[idx])
+        else
+            break
+        end
+        ++idx
+    end
+    while idx != cmd_args.size
+        if cmd_args[idx] == "--cponly"
+            compile_but_not_run = true
+        else
+            csmake_options.push_back(cmd_args[idx])
+        end
+        ++idx
+    end
+end
+
+target_function(csmake_options, csmake_args)
