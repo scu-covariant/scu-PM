@@ -5,7 +5,6 @@ import time_base64
 import imgui
 import imgui_font
 using imgui
-
 package new_request
 
 var ch_opened = false # 控制单条修改提交窗口
@@ -73,6 +72,26 @@ var file_opened = false
 var feed_opened = false 
 var erro = 0
 var address = ""
+
+function start(account,app)
+    if button("录入")
+        req_opened = true
+    end
+
+    text("")
+
+    if button("修改")
+        fix_opened = true
+    end
+
+    if req_opened
+        new_req(account,app)
+    end
+
+    if fix_opened
+        fix(account)
+    end
+end
 
 # 提交新物品信息界面
 function new_req(group_admin,app)
@@ -237,9 +256,6 @@ function file_in(file_opened,group_admin)
     end
 end
 
-
-
-
 function feedback(feed_opened,erro)
     if feed_opened
         var feedopen = true
@@ -265,9 +281,6 @@ function feedback(feed_opened,erro)
         imgui.end_window()
     end
 end
-
-
-
 
 # function auto_close(auto_clo,opened_window,times)
 #     if auto_clo
