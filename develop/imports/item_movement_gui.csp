@@ -1,0 +1,159 @@
+import db_connector
+import item_movement
+import imgui
+import imgui_font
+package item_movement_gui 
+using system
+using imgui
+
+    #message为提交的信息是否正确，id campus building room为三组需要提交的信息，check_if为主界面提交按钮是否按下
+    #window1是用来提示是否提交成功的窗口
+
+    var message=true
+    var campus=""
+    var id = ""
+    var building = ""
+    var room=""
+    var check_if = false
+    var check_if2 =false
+    var tab1=true
+    var tab2=true
+    var tab3=false
+    var TRUE=true
+    var select=new hash_map
+    var res=item_movement.read_move_places()
+    select.clear()
+    foreach i in range(item_movement.how_many_lines())
+        select[to_string(res[i][0].data)]=false
+    end
+    function window1(campus,building,room)
+        var check_window=true
+        #check_window为主窗口
+        begin_window("提示##1",check_window,{flags.always_auto_resize,flags.no_collapse})
+        set_window_pos(vec2(app.get_window_width()/4,app.get_window_height()/4))
+        set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        set_window_focus()
+        text("提交成功")
+        #此处添加修改变动表(finish)
+        
+        if (button("确定##1")||is_key_pressed(get_key_index(keys.enter)))
+            
+            
+            check_window=false
+                        
+        end
+        if check_window==false
+            check_if=false
+        end
+        end_window()
+            
+        #上传到管理员处(需要增加)
+    end
+    function window2()
+        var check_window2=true
+        #check_window为主窗口
+        begin_window("提示##2",check_window2,{flags.always_auto_resize,flags.no_collapse})
+        set_window_pos(vec2(app.get_window_width()/4,app.get_window_height()/4))
+        set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        set_window_focus()
+        text("提交成功")
+        #此处添加修改变动表(finish)
+        
+        if (button("确定##2")||is_key_pressed(get_key_index(keys.enter)))
+            
+            
+            check_window2=false
+                        
+        end
+        if check_window2==false
+            check_if2=false  
+        end
+        end_window()
+            
+        #上传到管理员处(需要增加)
+    end
+
+function start(account,windows_open,app)
+    var main_window = true
+    begin_window("configure",main_window,{flags.no_move,flags.no_collapse,flags.no_title_bar})
+    set_window_pos(vec2(0,22))
+    set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+    if begin_tab_bar("")
+        if begin_tab_item("提交界面",tab1,{})
+            text("申请信息录入")
+            separator()
+            input_text("物品ID",id,128)
+            separator()
+            #初步考虑把校区做成下拉框
+            input_text("校区",campus,128)
+            separator()
+            input_text("教学楼",building,128)
+            separator()
+            input_text("教室号",room,128)
+            separator()
+            if button("提交##1")
+                #判断id是否存在和教室号是否存在(finish)
+                if item_movement.is_room_existed(campus,building,room) == true
+                    check_if = true
+                    item_movement.start_change(id, item_movement.find_room_uuid(campus,building,room))
+                else
+                message=false
+                end
+
+                
+            end
+            if message==false
+                text ("提交信息错误")
+            end
+            if check_if
+                
+                window1(campus,building,room)
+                                
+            end
+            end_tab_item()
+        end
+        #出大问题
+        if begin_tab_item("申请界面",tab2,{})
+            
+            
+            foreach i in range(item_movement.how_many_lines())
+                check_box("物品id"+res[i][1].data+"来源地"+res[i][2].data+"目的地"+res[i][3].data,select[to_string(res[i][0].data)])
+
+            end
+            #打印变动表 
+            
+            if button("同意##2")
+                foreach i in range(item_movement.how_many_lines())
+                    if select[to_string(res[i][0].data)]
+                        item_movement.acceptance_of_demand(res[i][1].data)
+                        #做多选框
+                     #修改信息表，删除变动表
+                    end
+                end
+                check_if2=true
+                
+
+            end
+            if button("驳回##2")
+                foreach i in range(item_movement.how_many_lines())
+                    if select[to_string(res[i][0].data)]
+                        item_movement.rejection_of_demand(res[i][1].data)
+                        #做驳回多选框
+                     #修改信息表，删除变动表
+                    end
+                end
+                check_if2=true
+                
+
+            end
+            if check_if2==true
+                window2()
+            end
+            end_tab_item()
+        end
+        end_tab_bar()
+        
+    end
+    end_window()
+    
+end
