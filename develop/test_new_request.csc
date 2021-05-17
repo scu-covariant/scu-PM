@@ -45,30 +45,30 @@ end
 #     runtime.delay(1000) #延迟等待一秒
 # end
 
-var c = runtime.local_time()
-new_request.multi_insert(values, group_admin) # 批量录入
-var d = runtime.local_time()
-system.out.println(a)
-system.out.println(b)
-system.out.println(c)
-system.out.println(d)
+# var c = runtime.local_time()
+# new_request.multi_insert(values, group_admin) # 批量录入
+# var d = runtime.local_time()
+# system.out.println(a)
+# system.out.println(b)
+# system.out.println(c)
+# system.out.println(d)
 
-new_request.find_reject(group_admin, values) # 查找驳回条目
-var x = 1
-foreach i in values
-    var t = x
-    to_string(t)
-    new_request.construct(i, pro, req, pla) # 构建结构体
-    var str = "修改名称", str2 = "修改原因", str3 = "修改地点"
-    str += t
-    str2 += t
-    str3 += t
-    pro.eq_name = str
-    req.reason = str2
-    pla.dd_first = str3
-    new_request.single_change(pro, req, pla) # 单条修改条目
-    x++
-end
+# new_request.find_reject(group_admin, values) # 查找驳回条目
+# var x = 1
+# foreach i in values
+#     var t = x
+#     to_string(t)
+#     new_request.construct(i, pro, req, pla) # 构建结构体
+#     var str = "修改名称", str2 = "修改原因", str3 = "修改地点"
+#     str += t
+#     str2 += t
+#     str3 += t
+#     pro.eq_name = str
+#     req.reason = str2
+#     pla.dd_first = str3
+#     new_request.single_change(pro, req, pla) # 单条修改条目
+#     x++
+# end
 # var c = runtime.local_time()
 # new_request.multi_insert(values, group_admin) # 批量录入
 # var d = runtime.local_time()
