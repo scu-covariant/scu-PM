@@ -7,7 +7,7 @@
             "no-opt": false,
             "compile-only":false,
             "import_path":["develop/imports"],
-            "require" : ["imgui","csdbc_mysql","darwin"],
+            "require" : ["imgui","csdbc_mysql"],
             "arguments":""
         }
     }
