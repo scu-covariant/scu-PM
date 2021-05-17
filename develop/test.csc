@@ -18,3 +18,20 @@ while !app.is_closed()
     pop_font()
     app.render()
 end
+
+
+
+var w2_state = false
+        var w3_state = false
+        var w4_state = false
+        switch select_kind
+            case 0
+                w2_state = true
+            end
+            case 1
+                w3_state = true
+            end
+            case 2
+                w4_state = true
+            end
+        end
