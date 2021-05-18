@@ -17,6 +17,14 @@ using imgui
 #猜测：与数据库调用有关  
 #已解决：在w2打开前的数据库调用前加上条件判断select_res是否为空，同时w2结束时将select_res清空
 
+#张琚杰测试得出bug:
+#1 报修填表之中有个提交原因 填写之后提交 保修了第一个 但第二个报修点进去是已经填好的内容 
+# 已解决：在退出report_repair窗口时清空broken_reason数据
+#2 报修表界面没有设置焦点 小化之后就点不开了 
+#3 报修填表提交之后 外面的按钮没有变成已修复或者其他
+
+
+
 #筛选功能使用
 var select_way = {"按物资id查找","按物资状态查找","按物资名字查找"}
 var select_kind = 3
@@ -322,7 +330,8 @@ function report_repair(broken_item_id)
         end
         
         if button("退出##broken_exit") || !w3_is_open
-            repair_w_state[cur_uuid] = false;
+            repair_w_state[cur_uuid] = false
+            broken_reason = ""
         end
 
     end_window()   
@@ -452,7 +461,7 @@ function data_supply(one_record)
             logs_stmt.bind(0,logs_time)
             logs_stmt.bind(1,logs_requester)
             logs_stmt.bind(2,logs_detail)
-            logs_stmt.bind(3,2)
+            logs_stmt.bind(3,6)
             logs_stmt.just_exec()
             finish_writing_success_state = true
             #下次渲染不再调用数据库连接
