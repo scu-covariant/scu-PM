@@ -6,17 +6,24 @@ import imgui_font
 using system
 using imgui
 var db = db_connector.start()
+var window_opened_choose=false
 var window_opened_reson=false
 var window_accept_confirm=true
 var window_reject_confirm=true
 var accept_window_flag=false
 var reject_window_flag=false
 var select=new hash_map
+var name=new hash_map
+var time_list=new hash_map
+var name_set=0
+var one_time=true
+var name_number=1
 var reson=new string
 var res=db.exec("select * from request_tb")
+var object=db.exec("select * from propertys")
+var user=db.exec("select * from all_user")
 ##驳回原因为空提示标记
 var if_empty=false
-# var if_review_commit=false
 var accept_success_window_flag=false
 var reject_success_window_flag=false
 ##以下为主程序中设想的调用
@@ -40,14 +47,14 @@ function review_commit_write_log(flag,commiter)
     var stmt = db.prepare("INSERT INTO logs(log_time,commiter,detail) values(?,?,?)")
     ##驳回
     if(flag)
-        var detail="在"+t.timestamp2string(req_time)+"时  "+commiter+"驳回了若干条新物品申请"
+        var detail=commiter+"在"+t.timestamp2string(req_time)+"时  "+commiter+"驳回了若干条新物品申请"
         stmt.bind(0,req_time)
         stmt.bind(1,commiter)
         stmt.bind(2,detail)
         stmt.just_exec()
     ##通过
     else
-        var detail="在"+t.timestamp2string(req_time)+"时  "+commiter+"通过了若干条新物品申请"
+        var detail=commiter+"在"+t.timestamp2string(req_time)+"时  "+commiter+"通过了若干条新物品申请"
         stmt.bind(0,req_time)
         stmt.bind(1,commiter)
         stmt.bind(2,detail)
@@ -73,7 +80,7 @@ function accept()
         db.just_exec("ALTER TABLE request_tb AUTO_INCREMENT = 1")
         end
     end
-    read_db()
+    read_name()
     accept_success_window_flag=true
 end
 ##驳回逻辑
@@ -82,7 +89,7 @@ function reject()
     var stmt=db.prepare("UPDATE request_tb SET signals='2' where uuid=?")
     foreach i in range(res.size)
         if(select[to_string(res[i][0].data)])
-            stmt.bind(0,res[i][1].data)
+            stmt.bind(0,res[i][0].data)
             stmt.just_exec()
         end
     end
@@ -96,6 +103,7 @@ function accept_success_window()
     text("审核通过成功!")
     if(button("确定##88")||!accept_success_window_flag)
         accept_success_window_flag=false
+        window_opened_choose=false
         break
     end
     end_window()
@@ -109,6 +117,7 @@ function reject_success_window()
     text("审核驳回成功!")
     if(button("确定##88")||!reject_success_window_flag)
         reject_success_window_flag=false
+        window_opened_choose=false
         break
     end
     end_window()
@@ -133,7 +142,8 @@ function begin_reson_window()
                     reject_success_window_flag=true
                 end
             end
-            read_db()
+            reson=""
+            read_name()
         else
             if_empty=true
         end
@@ -143,8 +153,76 @@ function begin_reson_window()
     end
     end_window()
 end
+##检查名字是否重复
+function check_name(mid_name)
+    foreach i in range(name_number)
+        if(mid_name==name[i+1])
+        return false
+        end
+    end
+    return true
+end
+##寻找最近的时间
+function find_latest_time(name)
+    var timearray=new array
+    foreach i in range(res.size)
+        if(res[i][2].data==name)
+            timearray.push_back(res[i][6].data)
+        end
+    end
+    timearray.sort(t.lessThan)
+    return t.timestamp2string(timearray.back)
+end
+##按申请人名字分类
+function read_name()
+    name_number=1
+    name.clear()
+    read_db()
+    name[name_number]=res[0][2].data
+    foreach i in range(res.size)
+        if(res[i][4].data=="1"&&check_name(res[i][2].data))
+            name_number++
+            name[name_number]=res[i][2].data
+        end
+    end
+end
+##获取用户表中用户名字
+function get_user_name(uuid)
+    foreach i in range(user.size)
+        if(user[i][0].data==uuid)
+            return user[i][1].data
+        end
+    end
+    return "佚名"
+end 
 ##直接调用该函数
 function begin_review_commit_window(commiter,window_opened2)
+    begin_window("审核提交##choose1",window_opened2,{})
+    set_window_pos(vec2(150,50))
+    set_window_size(vec2(1500,900))
+    if(one_time||button("刷新##claer"))
+        read_name()
+        one_time=false
+        foreach i in range(name_number)
+            time_list[name[i+1]]=find_latest_time(name[i+1])
+        end
+        var req_time = t.get_local_timestamp()
+    end
+    foreach i in range(name_number)
+        text("申请人"+get_user_name(name[i+1])+"在"+time_list[name[i+1]]+"提交了新的物品申请")
+        same_line()
+        if(button("详细信息##"+i))
+            window_opened_choose=true
+            name_set=i+1
+        end
+    end
+    if(window_opened_choose)
+        begin_review_commit_window1(commiter,window_opened_choose,name[name_set])
+    end
+    end_window()
+end
+##多选窗口
+function begin_review_commit_window1(commiter,window_opened2,mid_name)
     begin_window("审核提交##choose",window_opened2,{})
     if(button("刷新##get_new"))
         read_db()
@@ -169,8 +247,9 @@ function begin_review_commit_window(commiter,window_opened2)
     set_window_size(vec2(1500,900))
     # set_window_focus()
     foreach i in range(res.size)
-        if(res[i][4].data=="1")
-            check_box("申请人："+res[i][2].data+"  "+"提交原因："+res[i][5].data,select[to_string(res[i][0].data)])
+        if(res[i][4].data=="1"&&res[i][2].data==mid_name)
+            var mid=res[i][1].data.to_number()-1
+            check_box("物品名："+object[mid][1].data+" | "+"设备规格："+object[mid][2].data+" | 提交理由："+res[i][5].data+"##"+res[i][0].data,select[to_string(res[i][0].data)])
         end
         ##多选框直接打出提交原因
     end
