@@ -8,7 +8,7 @@ using system
 using imgui
 
 
-#bug记录：
+#樊杨bug记录：
 #1.报修按钮只有第一个能用 
 #已解决:不同的报修按钮取不同的名字
 #2.筛选界面的exit按钮 点击后返回主界面 记录仍未筛选内容  
@@ -22,8 +22,16 @@ using imgui
 # 已解决：在退出report_repair窗口时清空broken_reason数据
 #2 报修表界面没有设置焦点 小化之后就点不开了 
 #3 报修填表提交之后 外面的按钮没有变成已修复或者其他
+#已解决： 忘记修改propertys表中的signals数据，并增加了数据改动后重新访问数据库功能
 
+#马晓晨提议：
+#将所有signals=3即故障待维修的物品优先显示
+#已完成
 
+#用来标志数据库是否更新，主界面是否需要重新访问数据库
+var main_res_update = false
+var main_res_init = true
+var res = new array
 
 #筛选功能使用
 var select_way = {"按物资id查找","按物资状态查找","按物资名字查找"}
@@ -80,10 +88,15 @@ function all_items_ifo(manager_id)
     return res
 end
 
-function view_all_items(res,manager_id)
+function view_all_items(manager_id)
     #作用：查看某个管理员管辖的所有物品
     #按钮触发 gui界面长期存在
 
+    #更新主界面数据库信息
+    if(main_res_init)
+        res = all_items_ifo(manager_id)
+        main_res_init = false
+    end
     #打开基础窗口
     var window_opened = true
     begin_window("view##w1",window_opened,{})
@@ -101,8 +114,18 @@ function view_all_items(res,manager_id)
          #输出每条记录，并在每条记录后添加相应按钮
          text("uuid\teq_name\teq_type\tbrand\twbdw\tstart_time\ttime_limit\tsfjz\tis_available\tlocal_place\tmanager\tsignals")
 
+        #优先输出正在维修的物品
         foreach i in res
-            repair_button_process(i)  
+            if i.back.data == "3"
+                repair_button_process(i)  
+            end
+        end
+
+        #再输出其它的物品
+        foreach i in res
+            if i.back.data != "3"
+                repair_button_process(i)  
+            end
         end
 
         text("")
@@ -319,10 +342,13 @@ function report_repair(broken_item_id)
             broken_stmt.bind(4, "\\ ")
             broken_stmt.just_exec()
 
+            db.just_exec("update propertys set signals = \"3\" where uuid = \"" + broken_item_id +"\"")
             #修改broke_submit_success_state，使得出现提交成功提示字
             broken_submit_success_state = true
             #修改broke_submit_state，使得下次渲染不再调用数据库连接
             broken_submit_state = false
+            #修改main_res_update,使得主界面数据库信息更新
+            main_res_update = true
         end
 
         if broken_submit_success_state
@@ -332,6 +358,16 @@ function report_repair(broken_item_id)
         if button("退出##broken_exit") || !w3_is_open
             repair_w_state[cur_uuid] = false
             broken_reason = ""
+            broken_submit_success_state = false
+            if main_res_update
+                foreach i in res
+                    if i.front.data == broken_item_id
+                        i.back.data = "3"
+                        break
+                    end
+                end
+                main_res_update = false
+            end
         end
 
     end_window()   
