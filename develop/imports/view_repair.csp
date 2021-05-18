@@ -103,7 +103,7 @@ function view_all_items(manager_id)
         end
         #打开基础窗口
         var w1_is_open = true
-        begin_window("view##w1",w1_is_open,{no_collapse})
+        begin_window("view##w1",w1_is_open,{flags.no_collapse})
             set_window_pos(vec2(0,0))
             set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
             
