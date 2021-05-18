@@ -109,3 +109,35 @@ end
 function get_utc_timestamp()
     return to_timestamp(runtime.utc_time())
 end
+#比较时间戳早晚的函数
+function lessThan(timestamp1, timestamp2)
+    var t1 = from_timestamp(timestamp1)
+    var t2 = from_timestamp(timestamp2)
+    if t1["year"] == t2["year"]
+        if t1["mon"] == t2["mon"]
+            if t1["day"] == t2["day"]
+                if t1["hour"] == t2["hour"]
+                    if t1["min"] == t2["min"]
+                        if t1["sec"] == t2["sec"]
+                            return false
+                        else
+                            return t1["sec"] < t2["sec"]
+                        end
+                    else
+                        return t1["min"] < t2["min"]
+                    end
+                else
+                    return t1["hour"] < t2["hour"]
+                end
+            else
+                return t1["day"] < t2["day"]
+            end
+        else
+            return t1["mon"] < t2["mon"]
+        end
+    else
+        return t1["year"] < t2["year"]
+    end
+    system.out.print(t1)
+    system.out.print(t2)
+end
