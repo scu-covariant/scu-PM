@@ -20,13 +20,16 @@ using imgui
 #张琚杰测试得出bug:
 #1 报修填表之中有个提交原因 填写之后提交 保修了第一个 但第二个报修点进去是已经填好的内容 
 # 已解决：在退出report_repair窗口时清空broken_reason数据
-#2 报修表界面没有设置焦点 小化之后就点不开了 
+#2 主界面无法关闭
+#已解决：增加变量is_view_all_items进行控制
 #3 报修填表提交之后 外面的按钮没有变成已修复或者其他
 #已解决： 忘记修改propertys表中的signals数据，并增加了数据改动后重新访问数据库功能
 
 #马晓晨提议：
 #将所有signals=3即故障待维修的物品优先显示
 #已完成
+
+var is_view_all_items = true
 
 #用来标志数据库是否更新，主界面是否需要重新访问数据库
 var main_res_update = false
@@ -89,75 +92,80 @@ function all_items_ifo(manager_id)
 end
 
 function view_all_items(manager_id)
-    #作用：查看某个管理员管辖的所有物品
+     #作用：查看某个管理员管辖的所有物品
     #按钮触发 gui界面长期存在
+    if is_view_all_items
 
-    #更新主界面数据库信息
-    if(main_res_init)
-        res = all_items_ifo(manager_id)
-        main_res_init = false
+        #更新主界面数据库信息
+        if(main_res_init)
+            res = all_items_ifo(manager_id)
+            main_res_init = false
+        end
+        #打开基础窗口
+        var w1_is_open = true
+        begin_window("view##w1",w1_is_open,{})
+            set_window_pos(vec2(0,0))
+            set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+            
+            #下拉框 选择筛选方式
+            var c1 = combo_box("查找方式",select_kind,select_way)
+            #输入框 输入筛选内容
+            var i1 = input_text("", input_con, 100)
+            #按钮 确认进入筛选界面
+            same_line()
+            var b1 = button("筛选")
+
+            #输出每条记录，并在每条记录后添加相应按钮
+            text("uuid\teq_name\teq_type\tbrand\twbdw\tstart_time\ttime_limit\tsfjz\tis_available\tlocal_place\tmanager\tsignals")
+
+            #优先输出正在维修的物品
+            foreach i in res
+                if i.back.data == "3"
+                    repair_button_process(i)  
+                end
+            end
+
+            #再输出其它的物品
+            foreach i in res
+                if i.back.data != "3"
+                    repair_button_process(i)  
+                end
+            end
+
+            text("")
+            text("")
+    
+            #当b1筛选按钮按下 并且 输入框内容不为空
+            if b1 && !input_con.empty()
+                #改变窗口bool值状态
+                switch select_kind
+                    case 0
+                        w2_state = true
+                        select_state = true
+                        text("0")
+                    end
+                    case 1
+                        w3_state = true
+                        select_state = true
+                        text("1")
+                    end
+                    case 2
+                        w4_state = true
+                        select_state = true
+                        text("2")
+                    end
+                end
+            end
+
+            #打开筛选窗口
+            select_window()
+
+            if !w1_is_open
+                is_view_all_items = false
+            end
+
+        end_window()
     end
-    #打开基础窗口
-    var window_opened = true
-    begin_window("view##w1",window_opened,{})
-        set_window_pos(vec2(0,0))
-        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
-        
-         #下拉框 选择筛选方式
-         var c1 = combo_box("查找方式",select_kind,select_way)
-         #输入框 输入筛选内容
-         var i1 = input_text("", input_con, 100)
-         #按钮 确认进入筛选界面
-         same_line()
-         var b1 = button("筛选")
-
-         #输出每条记录，并在每条记录后添加相应按钮
-         text("uuid\teq_name\teq_type\tbrand\twbdw\tstart_time\ttime_limit\tsfjz\tis_available\tlocal_place\tmanager\tsignals")
-
-        #优先输出正在维修的物品
-        foreach i in res
-            if i.back.data == "3"
-                repair_button_process(i)  
-            end
-        end
-
-        #再输出其它的物品
-        foreach i in res
-            if i.back.data != "3"
-                repair_button_process(i)  
-            end
-        end
-
-        text("")
-        text("")
- 
-         #当b1筛选按钮按下 并且 输入框内容不为空
-         if b1 && !input_con.empty()
-             #改变窗口bool值状态
-             switch select_kind
-                 case 0
-                     w2_state = true
-                     select_state = true
-                     text("0")
-                 end
-                 case 1
-                     w3_state = true
-                     select_state = true
-                     text("1")
-                 end
-                 case 2
-                     w4_state = true
-                     select_state = true
-                     text("2")
-                 end
-             end
-         end
-
-        #打开筛选窗口
-         select_window()
-
-
-    end_window()
 end
 
 
