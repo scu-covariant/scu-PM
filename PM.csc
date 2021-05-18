@@ -4,8 +4,7 @@ import db_connector
 import review_commit
 import view_repair
 import new_request
-import darwin
-using darwin
+import item_movement_gui
 var db = db_connector.start()
 using imgui
 
@@ -30,6 +29,7 @@ var if_review_commit = false
 var if_login_success = false
 var if_view_repair = false
 var if_new_request = false
+var if_item_movement = false
 # images
 var scu_image =  load_bmp_image("images/sichuan.bmp")
 var cov_image = load_bmp_image("images/cov.bmp")
@@ -152,6 +152,9 @@ function group_manager()
         if button("新物品录入##new_request_start")
             if_new_request = true
         end
+        if button("同级别物品转移##item_movement")
+            if_item_movement = true
+        end
         end_window()
     end
 end
@@ -173,6 +176,9 @@ while !app.is_closed()
         end
         if if_new_request
             new_request.start(user_id,app)
+        end
+        if if_item_movement
+            item_movement_gui.start(account,if_item_movement,app)
         end
         pop_font()    
     app.render()

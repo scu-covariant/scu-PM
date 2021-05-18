@@ -195,3 +195,40 @@ function is_room_existed(campus,building,room)
     return false
     end
 end
+function search_name_by_id(uuid)
+    #通过物品的uuid反查物品的名字
+    var res = db.exec("select eq_name from propertys where uuid="+uuid)
+    return res
+end
+function search_name_by_user_id(uuid)
+    #通过用户的uuid反查用户
+end
+function search_logs_by_users_id(uuid)
+    #通过user的id反查logs的内容
+    var res = db.exec("select * from logs where requester ="+ uuid +"or commiter =" + uuid+" limit 10")
+    return res
+end
+function check_user_jurisdiction_to_send_message(uuid,userid)
+    #查询用户是否有权力发这条申请
+    #uuid是物品的uuid
+    #userid是用户id
+    #实现了登录作用
+    var res = db.exec("select manager from propertys where uuid="+uuid)
+    if(res[0][0].data.to_number()==userid)
+    return true
+    else
+    return false
+    end
+end
+function check_user_jurisdiction_to_recieve_message(uuid,userid)
+    #查询用户是否有权力同意或驳回这条申请
+    #uuid是物品的uuid
+    #userid是用户id
+    #实现了登录作用
+    var res = db.exec("select commiter from move_places where item_id="+uuid)
+    if(res[0][0].data.to_number()==userid)
+    return true
+    else
+    return false
+    end
+end
