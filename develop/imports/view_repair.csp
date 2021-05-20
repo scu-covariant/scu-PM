@@ -24,6 +24,8 @@ using imgui
 #已解决：增加变量is_view_all_items进行控制
 #3 报修填表提交之后 外面的按钮没有变成已修复或者其他
 #已解决： 忘记修改propertys表中的signals数据，并增加了数据改动后重新访问数据库功能
+#4 开窗口时的no_collapse前缺少flags
+#已解决
 
 #马晓晨提议：
 #将所有signals=3即故障待维修的物品优先显示
@@ -77,6 +79,8 @@ var finish_writing_state = false
 var finish_writing_success_state = false
 var requester = ""
 var detail = ""
+var method = ""
+var timelog = ""
 #var logs_signals = new number
 
 function all_items_ifo(manager_id)
@@ -259,7 +263,7 @@ function select_window()
         end
 
         var w2_is_open = true
-        begin_window("select_with_##w2",w2_is_open,{no_collapse})
+        begin_window("select_with_##w2",w2_is_open,{flags.no_collapse})
             #window属性设置
             set_window_pos(vec2(0,0))
             set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
@@ -294,7 +298,7 @@ function report_repair(broken_item_id)
     import time_base64
 
     var w3_is_open = true
-    begin_window("report_repair##w3",w3_is_open,{no_collapse})
+    begin_window("report_repair##w3",w3_is_open,{flags.no_collapse})
         set_window_pos(vec2(0,0))
         set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
 
@@ -395,7 +399,7 @@ end
 
 function show_broken_table(test_res)
     var w5_is_open = true
-    begin_window("broken_table##w5",w5_is_open,{no_collapse})
+    begin_window("broken_table##w5",w5_is_open,{flags.no_collapse})
         set_window_pos(vec2(0,0))
         set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
         var data_in_line = ""
@@ -463,7 +467,7 @@ function data_supply(one_record)
     #构建一个gui弹窗（输入框 + 完成按钮（关闭弹窗+上传数据+更改final）
     var cur_uuid = one_record.front.data
     var w4_is_open = true
-    begin_window("data_supply##w4",w4_is_open,{no_collapse})
+    begin_window("data_supply##w4",w4_is_open,{flags.no_collapse})
         set_window_pos(vec2(0,0))
         set_window_size(vec2(0.5*get_monitor_width(0),0.5*get_monitor_height(0)))
         
@@ -480,6 +484,13 @@ function data_supply(one_record)
         text("填表人：")
         same_line()
         var supply_id = input_text("##suppy_id",requester,20)
+        #输入修理方法和修理时间
+        text("修理方法：")
+        same_line()
+        var repair_method = input_text("##repair_method",method,100)
+        text("修理时间：")
+        same_line()
+        var repair_time = input_text("##repair_method",timelog,20)
         #commiter不填写 仅列出
         text("批准人：")
         #输入框 输入细节
@@ -500,13 +511,20 @@ function data_supply(one_record)
             end
         
             #向数据库logs表填信息
-            #logs_signals = 2
+            #logs_signals = 6
             var logs_stmt = db.prepare("insert into logs values (null,?,?,null,?,?)")
             logs_stmt.bind(0,logs_time)
             logs_stmt.bind(1,logs_requester)
-            logs_stmt.bind(2,logs_detail)
+            logs_stmt.bind(2,logs_detail
             logs_stmt.bind(3,6)
             logs_stmt.just_exec()
+            #向数据库的broken表填写修理时间和方法信息
+            logs_stmt = db.prepare("insert into broken values (null,null,null,null,?,?)")
+            logs_stmt.bind(0,repair_time)
+            logs_stmt.bind(1,repair_method)
+            #将物品表的flag改为2 即正常使用
+            logs_stmt = db.prepare("insert into propertys values (null,null,null,null,null,null,null,null,null,null,null,?)")
+            logs_stmt.bind(0,2)
             finish_writing_success_state = true
             #下次渲染不再调用数据库连接
             finish_writing_state = false
