@@ -18,6 +18,7 @@ var wt_opened = false # 控制批量提交等待弹窗
 var submit_flag = false # 控制对批量提交函数的调用
 var find_rej = true # 在初始化时控制查找被驳回条目
 var check_all = false # 记录全选状态
+var find_any = false
 var mark = -1 # 记录要处理的条目编号
 
 var uni = new array # 联合结构体数组容器
@@ -311,25 +312,53 @@ function fix(group_admin)
         uni.clear()
         var values = new array
         find_reject(group_admin, values)
-
-        foreach i in values
-            var pro = new structs.property
-            var pla = new structs.place
-            var req = new structs.request
-            construct(i, pro, req, pla)
-            var info = new array
-            info.push_back(pro)
-            info.push_back(req)
-            info.push_back(pla)
-            uni.push_back(info)
+        if !array.empty(values)
+            find_any = true
+            foreach i in values
+                var pro = new structs.property
+                var pla = new structs.place
+                var req = new structs.request
+                construct(i, pro, req, pla)
+                var info = new array
+                info.push_back(pro)
+                info.push_back(req)
+                info.push_back(pla)
+                uni.push_back(info)
+            end
+            selected_fix.clear()
+            foreach i in range(uni.size)
+                selected_fix[to_string(i)] = false
+            end
+        else
+            find_any = false
         end
         find_rej = false
-        selected_fix.clear()
-        foreach i in range(uni.size)
-            selected_fix[to_string(i)] = false
-        end
     end
-    fix_request(group_admin)
+    if !find_any
+        find_nt()
+    else
+        fix_request(group_admin)
+    end
+end
+
+function find_nt()
+    var find_nothing = true
+    var a = false
+    begin_window("查找反馈##find_nt",find_nothing,{})
+        set_window_pos(vec2(get_monitor_width(0)/8,get_monitor_height(0)/8))
+        set_window_size(vec2(get_monitor_width(0)/4,get_monitor_height(0)/4))
+        set_window_focus()
+
+        text("未查找到驳回信息")
+        text("")
+
+        a = button("确定##find_confirm")
+    end_window()
+    if a
+        fix_opened = false
+        find_rej = true
+        break
+    end
 end
 
 # 被驳回申请查看窗口
