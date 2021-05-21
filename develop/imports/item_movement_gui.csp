@@ -22,15 +22,19 @@ using imgui
     var tab3=false
     var TRUE=true
     var select=new hash_map
-    var res=item_movement.read_move_places()
+    var res = null
     var message=0
     var search_button=false
     var main_window = true
     var message_of_search=""
-    select.clear()
-    foreach i in range(item_movement.how_many_lines())
-        select[to_string(res[i][0].data)]=false
+    function load_datas()
+        res = item_movement.read_move_places()
+        select.clear()
+        foreach i in range(item_movement.how_many_lines())
+            select[to_string(res[i][0].data)]=false
+        end
     end
+    load_datas()
     function window1(campus,building,room)
         var check_window=true
         #check_window为主窗口
@@ -85,7 +89,6 @@ using imgui
         if item_movement.is_property_existed(k)==false
             message_of_search=("物品"+item_movement.search_name_by_id(k))   
         end
-        text(message_of_search)
     end
     function window4(message)
         var check_window4=true
@@ -138,9 +141,10 @@ function start(account,windows_open,app)
                 same_line()
                 if button("查询##1")
                     search_button=true
+                    get_search_message(id)
                 end
                 if search_button
-                    get_search_message(id)
+                    text("查询结果：" + message_of_search)
                 end
                 separator()
                 text("请输入目的地信息")
@@ -170,8 +174,7 @@ function start(account,windows_open,app)
                             end
                         end
                     end
-
-                    
+                    load_datas()
                 end
                 if message==1
                     window4(message)

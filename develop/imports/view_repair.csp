@@ -515,7 +515,7 @@ function data_supply(one_record)
             var logs_stmt = db.prepare("insert into logs values (null,?,?,null,?,?)")
             logs_stmt.bind(0,logs_time)
             logs_stmt.bind(1,logs_requester)
-            logs_stmt.bind(2,logs_detail
+            logs_stmt.bind(2,logs_detail)
             logs_stmt.bind(3,6)
             logs_stmt.just_exec()
             #向数据库的broken表填写修理时间和方法信息
