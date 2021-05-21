@@ -198,7 +198,7 @@ end
 function search_name_by_id(uuid)
     #通过物品的uuid反查物品的名字
     var res = db.exec("select eq_name from propertys where uuid="+uuid)
-    return res
+    return res[0][0].data
 end
 function search_name_by_user_id(uuid)
     #通过用户的uuid反查用户
@@ -227,6 +227,66 @@ function check_user_jurisdiction_to_recieve_message(uuid,userid)
     #实现了登录作用
     var res = db.exec("select commiter from move_places where item_id="+uuid)
     if(res[0][0].data.to_number()==userid)
+    return true
+    else
+    return false
+    end
+end
+function is_item_moved(uuid)
+    #判断物品是不是已经移动了
+    #uuid是物品的uuid
+    var res = db.exec("SELECT count(*) FROM move_places where item_id="+uuid) 
+    if(res[0][0].data.to_number() != 0)
+    return false
+    #false是已经存在了，不可以输入
+    else
+    return true
+    #true是未存在的，可以输入
+    end
+end
+function is_item_moved_to_another_place(uuid,campus,building,room)
+    #判断物品是不是已经移动到另外的位置
+    #uuid是物品的uuid
+    var res = db.exec("select local_place from propertys where uuid="+uuid)
+    var room_uuid = find_room_uuid(campus,building,room) 
+    if(res[0][0].data.to_number() == room_uuid)
+    return false
+    #false是未移动,不应该输入
+    else
+    return true
+    #true是移动，可以输入
+    end
+end
+function uuid_to_campus(uuid)
+    # 通过uuid反查校区
+    var res = db.exec("select dd_first from places where uuid = "+ uuid)
+    return res[0][0].data
+end
+function uuid_to_building(uuid)
+    # 通过uuid反查教学楼
+    var res = db.exec("select dd_second from places where uuid = "+ uuid)
+    return res[0][0].data
+end
+function uuid_to_floor(uuid)
+    # 通过uuid反查楼层
+    var res = db.exec("select dd_third from places where uuid = "+ uuid)
+    return res[0][0].data
+end
+function uuid_to_room(uuid)
+    # 通过uuid反查门牌号
+    var res = db.exec("select dd_fourth from places where uuid = "+ uuid)
+    return res[0][0].data
+end
+function uuid_to_roomuser(uuid)
+    # 通过uuid反查管理员id
+    # 返回的是数字，不需要转换
+    var res = db.exec("select group_admin from places where uuid = "+ uuid)
+    return res[0][0].data.to_number()
+end
+function is_property_existed(uuid)
+    #判断物品是否存在，uuid
+    var res = db.exec("SELECT count(*) FROM propertys where uuid="+ uuid) 
+    if(res[0][0].data.to_number() != 0)
     return true
     else
     return false
