@@ -127,8 +127,8 @@ using imgui
 
 
 function start(account,windows_open,app)
-    if main_window
-        begin_window("configure",main_window,{flags.no_move,flags.no_collapse})
+    if windows_open
+        begin_window("configure",windows_open,{flags.no_move,flags.no_collapse})
         set_window_pos(vec2(0,22))
         set_window_size(vec2(app.get_window_width(),app.get_window_height()))
         if begin_tab_bar("")

@@ -95,10 +95,10 @@ function all_items_ifo(manager_id)
     return res
 end
 
-function view_all_items(manager_id)
+function view_all_items(manager_id,if_view_all_items)
      #作用：查看某个管理员管辖的所有物品
     #按钮触发 gui界面长期存在
-    if is_view_all_items
+    if if_view_all_items
 
         #更新主界面数据库信息
         if(main_res_init)
@@ -106,8 +106,7 @@ function view_all_items(manager_id)
             main_res_init = false
         end
         #打开基础窗口
-        var w1_is_open = true
-        begin_window("view##w1",w1_is_open,{flags.no_collapse})
+        begin_window("view##w1",if_view_all_items,{flags.no_collapse})
             set_window_pos(vec2(0,0))
             set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
             
@@ -163,11 +162,6 @@ function view_all_items(manager_id)
 
             #打开筛选窗口
             select_window()
-
-            if !w1_is_open
-                is_view_all_items = false
-            end
-
         end_window()
     end
 end

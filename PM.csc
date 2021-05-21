@@ -38,7 +38,6 @@ var ins_image = load_bmp_image("images/ins.bmp")
 var pass_message = ""
 
 #data cache
-var view_data_cache = null
 set_font_scale(1.0) 
 function identity(account,pass)
     var stmt = db.prepare("select account, pass, job, uuid from all_user where account=? and pass=?")
@@ -104,7 +103,6 @@ function login_window()
                         if_group_manager = true
                         if_login_window = false
                         if_login_success = true
-                        view_data_cache =  view_repair.all_items_ifo(user_id)
                     end
                     default
                         pass_message = "密码错误！"
@@ -172,7 +170,7 @@ while !app.is_closed()
             review_commit.begin_review_commit_window(account,if_review_commit)
         end
         if if_view_repair
-            view_repair.view_all_items(view_data_cache,user_id)
+            view_repair.view_all_items(user_id,if_view_repair)
         end
         if if_new_request
             new_request.start(user_id,app)
