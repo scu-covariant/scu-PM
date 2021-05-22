@@ -522,6 +522,7 @@ function data_supply(one_record)
             finish_writing_success_state = true
             #下次渲染不再调用数据库连接
             finish_writing_state = false
+            main_res_update = true
         end
 
         if finish_writing_success_state
@@ -530,6 +531,15 @@ function data_supply(one_record)
 
         if button("exit##b_supply_exit") || !w4_is_open
             repair_w_state[cur_uuid] = false;
+            if main_res_update
+                foreach i in res
+                    if i.front.data == cur_uuid
+                        i.back.data = "2"
+                        break
+                    end
+                end
+                main_res_update = false
+            end
         end
     end_window()   
 end
