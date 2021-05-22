@@ -125,9 +125,13 @@ using imgui
 
 function start(account,windows_open,app)
     if windows_open
-        begin_window("移动界面",windows_open,{flags.no_move,flags.no_collapse})
+        begin_window("小组管理员界面",windows_open,{flags.no_move,flags.no_collapse})
         set_window_pos(vec2(0,22))
         set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        if button("打开所有标签")
+            tab1=true
+            tab2=true
+        end
         if begin_tab_bar("")
             if begin_tab_item("提交界面",tab1,{})
                 text("申请信息录入")
@@ -214,7 +218,7 @@ function start(account,windows_open,app)
             if begin_tab_item("申请界面",tab2,{})
 
                 foreach i in range(item_movement.how_many_lines())
-                        check_box("物品id"+res[i][1].data+"来源地"+res[i][2].data+"目的地"+res[i][3].data+,select[to_string(res[i][0].data)])
+                        check_box("物品id"+res[i][1].data+"来源地"+res[i][2].data+"目的地"+res[i][3].data,select[to_string(res[i][0].data)])
 
                 end
                 #打印变动表 
