@@ -484,7 +484,7 @@ function data_supply(one_record)
         var repair_method = input_text("##repair_method",method,100)
         text("修理时间：")
         same_line()
-        var repair_time = input_text("##repair_method",timelog,20)
+        var repair_time = input_text("##repair_time",timelog,20)
         #commiter不填写 仅列出
         text("批准人：")
         #输入框 输入细节
@@ -528,9 +528,16 @@ function data_supply(one_record)
         if finish_writing_success_state
             text("表单上传成功！")
         end
+        
+        
 
         if button("exit##b_supply_exit") || !w4_is_open
             repair_w_state[cur_uuid] = false;
+            logs_detail = ""
+            requester = ""
+            detail = ""
+            method = ""
+            timelog = ""
             if main_res_update
                 foreach i in res
                     if i.front.data == cur_uuid
@@ -540,6 +547,7 @@ function data_supply(one_record)
                 end
                 main_res_update = false
             end
+            finish_writing_success_state = false
         end
     end_window()   
 end
