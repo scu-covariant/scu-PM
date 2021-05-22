@@ -258,27 +258,27 @@ function is_item_moved_to_another_place(uuid,campus,building,room)
     end
 end
 function uuid_to_campus(uuid)
-    # 通过uuid反查校区
+    # 通过地址uuid反查校区
     var res = db.exec("select dd_first from places where uuid = "+ uuid)
     return res[0][0].data
 end
 function uuid_to_building(uuid)
-    # 通过uuid反查教学楼
+    # 通过地址uuid反查教学楼
     var res = db.exec("select dd_second from places where uuid = "+ uuid)
     return res[0][0].data
 end
 function uuid_to_floor(uuid)
-    # 通过uuid反查楼层
+    # 通过地址uuid反查楼层
     var res = db.exec("select dd_third from places where uuid = "+ uuid)
     return res[0][0].data
 end
 function uuid_to_room(uuid)
-    # 通过uuid反查门牌号
+    # 通过地址uuid反查门牌号
     var res = db.exec("select dd_fourth from places where uuid = "+ uuid)
     return res[0][0].data
 end
 function uuid_to_roomuser(uuid)
-    # 通过uuid反查管理员id
+    # 通过地址uuid反查管理员id
     # 返回的是数字，不需要转换
     var res = db.exec("select group_admin from places where uuid = "+ uuid)
     return res[0][0].data.to_number()
@@ -291,4 +291,40 @@ function is_property_existed(uuid)
     else
     return false
     end
+end
+function use_item_id_find_room_id(uuid)
+    #用物品的id查找物品的地址
+    #返回为number，不需要转换    
+    var res = db.exec("select local_place from propertys where uuid = " + uuid)
+    return res[0][0].data.to_number()
+end
+function item_id_to_campus(uuid)
+    #这个是物品的uuid查校区了
+    var tmp = use_item_id_find_room_id(uuid)
+    var tmp2 = uuid_to_campus(tmp)
+    return tmp2
+end
+function item_id_to_building(uuid)
+    #这个是物品的uuid查教学楼了
+    var tmp = use_item_id_find_room_id(uuid)
+    var tmp2 = uuid_to_building(tmp)
+    return tmp2
+end
+function item_id_to_floor(uuid)
+    #这个是物品的uuid查楼层了
+    var tmp = use_item_id_find_room_id(uuid)
+    var tmp2 = uuid_to_floor(tmp)
+    return tmp2
+end
+function item_id_to_room(uuid)
+    #这个是物品的uuid查房间号了
+    var tmp = use_item_id_find_room_id(uuid)
+    var tmp2 = uuid_to_room(tmp)
+    return tmp2
+end
+function item_id_to_roomuser(uuid)
+    #这个是物品的uuid查管理员了
+    var tmp = use_item_id_find_room_id(uuid)
+    var tmp2 = uuid_to_roomuser(tmp)
+    return tmp2
 end

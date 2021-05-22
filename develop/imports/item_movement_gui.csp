@@ -44,18 +44,13 @@ using imgui
         set_window_focus()
         text("提交成功")
         #此处添加修改变动表(finish)
-        
-        if (button("确定##1")||is_key_pressed(get_key_index(keys.enter)))
-            
-            
-            check_window=false
-                        
+        if (button("确定##1")||is_key_pressed(get_key_index(keys.enter))) 
+            check_window=false          
         end
         if check_window==false
             check_if=false
         end
         end_window()
-            
         #上传到管理员处(需要增加)
     end
     function window2()
@@ -67,27 +62,25 @@ using imgui
         set_window_focus()
         text("提交成功")
         #此处添加修改变动表(finish)
-        
         if (button("确定##2")||is_key_pressed(get_key_index(keys.enter)))
-            
-            
-            check_window2=false
-                        
+            check_window2=false    
         end
         if check_window2==false
             check_if2=false  
         end
         end_window()
-            
         #上传到管理员处(需要增加)
     end
     function get_search_message(k)
+        if(k != "")
         if item_movement.is_property_existed(k)
-            message_of_search=("物品:"+item_movement.search_name_by_id(k)+" 校区:"+item_movement.uuid_to_campus(k)+" 教学楼:"+item_movement.uuid_to_building(k)+" 门牌号:"+item_movement.uuid_to_roomuser(k))
-        
+            message_of_search=("物品:"+item_movement.search_name_by_id(k)+" 校区:"+item_movement.item_id_to_campus(k)+" 教学楼:"+item_movement.item_id_to_building(k)+" 门牌号:"+item_movement.item_id_to_room(k))
         end
         if item_movement.is_property_existed(k)==false
-            message_of_search=("物品"+item_movement.search_name_by_id(k))   
+            message_of_search=("物品不存在")      
+        end
+        else
+            message_of_search=("未输入id")
         end
     end
     function window4(message)
@@ -108,27 +101,31 @@ using imgui
         if message==3
             #window4(message)
             text ("物品就在此地")
-        end           
+        end    
+        if message==4
+            #window4(message)
+            text ("物品号不存在")
+        end  
+        if message==5
+            # window4(message)
+            text ("请输入内容")
+        end     
         #此处添加修改变动表(finish)
         
         if (button("确定##4")||is_key_pressed(get_key_index(keys.enter)))
-            
-            
-            check_window4=false
-                        
+            check_window4=false     
         end
         if check_window4==false
             message=0  
         end
         end_window()
-            
         #上传到管理员处(需要增加)
     end
 
 
 function start(account,windows_open,app)
     if windows_open
-        begin_window("configure",windows_open,{flags.no_move,flags.no_collapse})
+        begin_window("移动界面",windows_open,{flags.no_move,flags.no_collapse})
         set_window_pos(vec2(0,22))
         set_window_size(vec2(app.get_window_width(),app.get_window_height()))
         if begin_tab_bar("")
@@ -158,21 +155,33 @@ function start(account,windows_open,app)
                 separator()
                 if button("提交##1")
                     #判断id是否存在和教室号是否存在(finish)
-                    if (item_movement.is_room_existed(campus,building,room) == true) and (item_movement.is_item_moved(id) == true) and (item_movement.is_item_moved_to_another_place(id,campus,building,room) == true)
-                        check_if = true
-                        item_movement.start_change(id, item_movement.find_room_uuid(campus,building,room))
-                    else 
-                        if (item_movement.is_room_existed(campus,building,room) == false)
-                            message = 1
-                        else
-                            if (item_movement.is_item_moved(id) == false)
-                                message=2
-                            else 
-                                if (item_movement.is_item_moved_to_another_place(id,campus,building,room) == false)
-                                message=3
+                    if (id!="") and (campus != "") and (building != "") and (room != "")
+                    if(item_movement.is_property_existed(id)==true)
+                        if (item_movement.is_room_existed(campus,building,room) == true) and (item_movement.is_item_moved(id) == true) and (item_movement.is_item_moved_to_another_place(id,campus,building,room) == true)
+                            check_if = true
+                            item_movement.start_change(id, item_movement.find_room_uuid(campus,building,room))
+                        else 
+                            if (item_movement.is_room_existed(campus,building,room) == false)
+                                message = 1
+                            else
+                                if (item_movement.is_item_moved(id) == false)
+                                    message=2
+                                else 
+                                    if (item_movement.is_item_moved_to_another_place(id,campus,building,room) == false)
+                                        message=3
+                                    # else
+                                    #     if(item_movement.is_property_existed(id)==false)
+                                    #     message = 4
+                                    #     end
+                                    end
                                 end
                             end
                         end
+                    else
+                        message = 4
+                    end
+                    else
+                        message = 5
                     end
                     load_datas()
                 end
@@ -187,18 +196,23 @@ function start(account,windows_open,app)
                 if message==3
                     window4(message)
                     text ("物品就在此地")
-                end            
+                end 
+                if message==4
+                    window4(message)
+                    text ("物品号不存在")
+                end
+                if message==5
+                    window4(message)
+                    text ("请输入内容")
+                end           
                 if check_if
-                    
-                    window1(campus,building,room)
-                                    
+                    window1(campus,building,room)           
                 end
                 end_tab_item()
             end
             #出大问题
             if begin_tab_item("申请界面",tab2,{})
-                
-                
+
                 foreach i in range(item_movement.how_many_lines())
                         check_box("物品id"+res[i][1].data+"来源地"+res[i][2].data+"目的地"+res[i][3].data,select[to_string(res[i][0].data)])
 
