@@ -328,3 +328,30 @@ function item_id_to_roomuser(uuid)
     var tmp2 = uuid_to_roomuser(tmp)
     return tmp2
 end
+
+function search_building_by_campus(dd_first)
+    #通过dd_first查找在这个校区内教学楼的位置
+    #注意，这个是未转化的，需要自己转化
+    var res = db.exec("select dd_second from places where dd_first = \""+ dd_first +"\"")
+    return res
+end
+
+function search_room_by_building_and_campus(dd_first,dd_second)
+    #通过dd_first和dd_second查房间号
+    #注意，这个是未转化的，需要自己转化
+    var res = db.exec("select dd_fourth from places where dd_first = \""+ dd_first +"\" and dd_second = \""+dd_second+"\"")
+    return res
+end
+
+function search_floor_by_building_and_campus(dd_first,dd_second)
+    #通过dd_first和dd_second查楼层
+    #注意，这个是未转化的，需要自己转化
+    var res = db.exec("select dd_third from places where dd_first = \""+ dd_first +"\" and dd_second = \""+dd_second+"\"")
+    return res
+end
+function search_room_by_building_and_campus_and_floor(dd_first,dd_second,dd_third)
+    #通过dd_first和dd_second和dd_third查房间号
+    #注意，这个是未转化的，需要自己转化
+    var res = db.exec("select dd_fourth from places where dd_first = \""+ dd_first +"\" and dd_second = \""+dd_second+"\" and dd_third = \""+dd_third+"\"")
+    return res
+end
