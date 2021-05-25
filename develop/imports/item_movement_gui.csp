@@ -2,6 +2,7 @@ import db_connector
 import item_movement
 import imgui
 import imgui_font
+import time_base64
 package item_movement_gui 
 using system
 using imgui
@@ -132,6 +133,7 @@ function start(account,windows_open,app)
             tab1=true
             tab2=true
         end
+        same_line()
         if begin_tab_bar("")
             if begin_tab_item("提交界面",tab1,{})
                 text("申请信息录入")
@@ -218,7 +220,7 @@ function start(account,windows_open,app)
             if begin_tab_item("申请界面",tab2,{})
 
                 foreach i in range(item_movement.how_many_lines())
-                        check_box("物品id"+res[i][1].data+"来源地"+res[i][2].data+"目的地"+res[i][3].data,select[to_string(res[i][0].data)])
+                        check_box("物品id"+res[i][1].data+"        名称:"+item_movement.search_name_by_id(res[i][1].data)+"             来源地:"+item_movement.uuid_to_campus(res[i][2].data)+item_movement.uuid_to_building(res[i][2].data)+item_movement.uuid_to_room(res[i][2].data)+"             目的地:"+item_movement.uuid_to_campus(res[i][3].data)+item_movement.uuid_to_building(res[i][3].data)+item_movement.uuid_to_room(res[i][3].data)+"\n"+time_base64.timestamp2string(res[i][6].data),select[to_string(res[i][0].data)])
 
                 end
                 #打印变动表 
