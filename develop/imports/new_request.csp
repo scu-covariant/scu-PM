@@ -119,6 +119,7 @@ function new_req(group_admin,app)
         same_line()
         if button("返回##back")
             req_opened = false
+            ropen = false
         end
         if ropen == false
             req_opened = false
@@ -140,31 +141,30 @@ function single(sin_opened,group_admin)
         begin_window("单条录入",sopen,{})
         set_window_pos(vec2(0,0))
         set_window_size(vec2(app.get_window_width(),app.get_window_height()))
-        # set_window_focus()
         text("设备名称")
-        input_text("##eq_name", single_arr.eq_name, 10)
+        input_text("##eq_name", single_arr.eq_name, 255)
         text("规格型号")
-        input_text("##eq_type", single_arr.eq_type, 10)
+        input_text("##eq_type", single_arr.eq_type, 255)
         text("品牌")
-        input_text("##brand", single_arr.brand, 10)
+        input_text("##brand", single_arr.brand, 255)
         text("维保单位")
-        input_text("##wbdw", single_arr.wbdw, 10)
+        input_text("##wbdw", single_arr.wbdw, 255)
         text("质保期限")
-        input_text("##time_limit", single_arr.time_limit, 10)
+        input_text("##time_limit", single_arr.time_limit, 255)
         text("是否建账")
-        input_text("##sfjz", single_arr.sfjz, 10)
+        input_text("##sfjz", single_arr.sfjz, 255)
         text("是否可备用")
-        input_text("##is_available", single_arr.is_available, 10)
+        input_text("##is_available", single_arr.is_available, 255)
         text("校区")
-        input_text("##dd_first", single_arr.dd_first, 10)
+        input_text("##dd_first", single_arr.dd_first, 255)
         text("教学楼")
-        input_text("##dd_second", single_arr.dd_second, 10)
+        input_text("##dd_second", single_arr.dd_second, 255)
         text("层数")
-        input_text("##dd_third", single_arr.dd_third, 10)
+        input_text("##dd_third", single_arr.dd_third, 255)
         text("门牌号")
-        input_text("##dd_fourth", single_arr.dd_fourth, 10)
+        input_text("##dd_fourth", single_arr.dd_fourth, 255)
         text("提交原因")
-        input_text("##reason", single_arr.reason, 10)
+        input_text("##reason", single_arr.reason, 255)
         if button("提交##hand")
             single_arr.set()
             system.out.print(single_arr.arr[0])
@@ -174,6 +174,7 @@ function single(sin_opened,group_admin)
         same_line()
         if button("完成##finish")
             sin_opened = false
+            sopen = false
         end
         if sopen == false
             sin_opened = false
@@ -196,8 +197,9 @@ function submit_succeed(suc_opened)
         if button("确定##suasdasd")
             system.out.print("asd")
             suc_opened = false
+            sucopen = false
         end
-        if sucopen = false
+        if sucopen == false
             suc_opened = false
         end
         end_window()
@@ -218,7 +220,7 @@ function submit_fail(fail_opened)
             system.out.print("asd")
             suc_opened = false
         end
-        if failopen = false
+        if failopen == false
             fail_opened = false
         end
         end_window()
@@ -235,7 +237,7 @@ function file_in(file_opened,group_admin)
         set_window_pos(vec2(0,0))
         set_window_size(vec2(app.get_window_width(),app.get_window_height()))
         text("请输入文件地址")
-        input_text("##address",address,50)
+        input_text("##address",address,255)
         same_line()
 
         if button("选择##choose")
@@ -256,8 +258,9 @@ function file_in(file_opened,group_admin)
         same_line()
         if button("返回##back")
             file_opened = false
+            fileopen = false
         end
-        if fileopen = false
+        if fileopen == false
             file_opened = false
         end
         end_window()
@@ -275,7 +278,7 @@ function feedback(feed_opened,erro)
         set_window_size(vec2(app.get_window_width()*0.4,app.get_window_height()*0.4))
         set_window_focus()
         if erro == -1
-        text("文件内容中包含英文逗号或英文双引号。")
+            text("文件内容中包含英文逗号或英文双引号。")
         end
         if erro == -2
             text("读取文件时出错，请检查路径是否正确。")
@@ -285,8 +288,9 @@ function feedback(feed_opened,erro)
         end
         if button("确定##suasdasd")
             feed_opened = false
+            feedopen = false
         end
-        if feedopen = false
+        if feedopen == false
             feed_opened = false
         end
         end_window()
@@ -338,6 +342,7 @@ function fix(group_admin)
         find_nt()
     else
         fix_request(group_admin)
+        system.out.println("驳回查看主界面被调用")
     end
 end
 
@@ -354,7 +359,7 @@ function find_nt()
 
         a = button("确定##find_confirm")
     end_window()
-    if a
+    if a or find_nothing == false
         fix_opened = false
         find_rej = true
         break
