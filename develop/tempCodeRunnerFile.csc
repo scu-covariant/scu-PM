@@ -1,1 +1,1 @@
-runtime.local_time()
+.

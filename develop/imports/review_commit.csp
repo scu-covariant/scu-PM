@@ -1,0 +1,313 @@
+package review_commit
+import time_base64 as t
+import db_connector
+import imgui
+import imgui_font 
+using system
+using imgui
+var db = db_connector.start()
+var window_opened_choose=false
+var window_opened_reson=false
+var window_accept_confirm=true
+var window_reject_confirm=true
+var accept_window_flag=false
+var reject_window_flag=false
+var select=new hash_map
+var name=new hash_map
+var time_list=new hash_map
+var name_set=0
+var one_time=true
+var name_number=1
+var reson=new string
+var res=db.exec("select * from request_tb")
+var object=db.exec("select * from propertys")
+var user=db.exec("select * from all_user")
+##驳回原因为空提示标记
+var if_empty=false
+var accept_success_window_flag=false
+var reject_success_window_flag=false
+##以下为主程序中设想的调用
+# if(button("审核##asd"))
+#         if_review_commit=true
+# end
+# if(if_review_commit)
+#         review_commit.begin_review_commit_window("0",if_review_commit)
+# end
+##读取数据库
+function read_db()
+    select.clear()
+    res=db.exec("select * from request_tb")
+    foreach i in range(res.size)
+        select[to_string(res[i][0].data)]=false
+    end
+end
+#写入日志
+function review_commit_write_log(flag,commiter)
+    var req_time = t.get_local_timestamp()
+    var stmt = db.prepare("INSERT INTO logs(log_time,commiter,detail) values(?,?,?)")
+    ##驳回
+    if(flag)
+        var detail=commiter+"在"+t.timestamp2string(req_time)+"时  "+commiter+"驳回了若干条新物品申请"
+        stmt.bind(0,req_time)
+        stmt.bind(1,commiter)
+        stmt.bind(2,detail)
+        stmt.just_exec()
+    ##通过
+    else
+        var detail=commiter+"在"+t.timestamp2string(req_time)+"时  "+commiter+"通过了若干条新物品申请"
+        stmt.bind(0,req_time)
+        stmt.bind(1,commiter)
+        stmt.bind(2,detail)
+        stmt.just_exec()
+    end
+end
+##通过逻辑
+function accept()
+    ##物品表中signals改为2：正常使用
+    var stmt1=db.prepare("UPDATE propertys SET signals=2 where uuid=?")
+    foreach i in range(res.size)
+        if(select[to_string(res[i][0].data)])
+            stmt1.bind(0,res[i][1].data)
+            stmt1.just_exec()
+        end
+    end
+    ##删除申请表中通过条目
+    var stmt2=db.prepare("DELETE FROM request_tb WHERE uuid=?")
+    foreach i in range(res.size)
+        if(select[to_string(res[i][0].data)])
+        stmt2.bind(0,res[i][0].data)
+        stmt2.just_exec()
+        db.just_exec("ALTER TABLE request_tb AUTO_INCREMENT = 1")
+        end
+    end
+    read_name()
+    accept_success_window_flag=true
+end
+##驳回逻辑
+function reject()
+    ##申请表中signal改为2：驳回
+    var stmt=db.prepare("UPDATE request_tb SET signals='2' where uuid=?")
+    foreach i in range(res.size)
+        if(select[to_string(res[i][0].data)])
+            stmt.bind(0,res[i][0].data)
+            stmt.just_exec()
+        end
+    end
+end
+##审合通过提示窗口
+function accept_success_window()
+    begin_window("##saccept_uccess",accept_success_window_flag,{})
+    set_window_pos(vec2(get_monitor_width(0)*0.3,get_monitor_height(0)*0.3))
+    set_window_size(vec2(500,300))
+    set_window_focus()
+    text("审核通过成功!")
+    if(button("确定##88")||!accept_success_window_flag)
+        accept_success_window_flag=false
+        window_opened_choose=false
+        break
+    end
+    end_window()
+end
+##驳回成功提示窗口
+function reject_success_window()
+    begin_window("##sreject_uccess",reject_success_window_flag,{})
+    set_window_pos(vec2(get_monitor_width(0)*0.3,get_monitor_height(0)*0.3))
+    set_window_size(vec2(500,300))
+    set_window_focus()
+    text("审核驳回成功!")
+    if(button("确定##88")||!reject_success_window_flag)
+        reject_success_window_flag=false
+        window_opened_choose=false
+        break
+    end
+    end_window()
+end
+##写入驳回原因
+function begin_reson_window()
+    begin_window("驳回原因##5",window_opened_reson,{})
+    set_window_pos(vec2(250,100))
+    set_window_size(vec2(600,800))
+    set_window_focus()
+    text("请写入驳回原因")
+    input_text_multiline("##4", reson, 1000)
+    if(button("完成##3"))
+        if(reson!="")
+            var stmt= db.prepare("UPDATE request_tb SET reason=? where uuid=?")
+            foreach i in range(res.size)
+                if(select[to_string(res[i][0].data)])
+                    stmt.bind(0,reson)
+                    stmt.bind(1,res[i][1].data)
+                    stmt.just_exec()
+                    window_opened_reson=false
+                    reject_success_window_flag=true
+                end
+            end
+            reson=""
+            read_name()
+        else
+            if_empty=true
+        end
+    end
+    if(if_empty)
+        text("驳回原因不能为空！")
+    end
+    end_window()
+end
+##检查名字是否重复
+function check_name(mid_name)
+    foreach i in range(name_number)
+        if(mid_name==name[i+1])
+        return false
+        end
+    end
+    return true
+end
+##寻找最近的时间
+function find_latest_time(name)
+    var timearray=new array
+    foreach i in range(res.size)
+        if(res[i][2].data==name)
+            timearray.push_back(res[i][6].data)
+        end
+    end
+    timearray.sort(t.lessThan)
+    return t.timestamp2string(timearray.back)
+end
+##按申请人名字分类
+function read_name()
+    name_number=1
+    name.clear()
+    read_db()
+    name[name_number]=res[0][2].data
+    foreach i in range(res.size)
+        if(res[i][4].data=="1"&&check_name(res[i][2].data))
+            name_number++
+            name[name_number]=res[i][2].data
+        end
+    end
+end
+##获取用户表中用户名字
+function get_user_name(uuid)
+    foreach i in range(user.size)
+        if(user[i][0].data==uuid)
+            return user[i][1].data
+        end
+    end
+    return "佚名"
+end 
+##直接调用该函数
+function begin_review_commit_window(commiter,window_opened2)
+    begin_window("审核提交##choose1",window_opened2,{})
+    set_window_pos(vec2(150,50))
+    set_window_size(vec2(1500,900))
+    if(one_time||button("刷新##claer"))
+        read_name()
+        one_time=false
+        foreach i in range(name_number)
+            time_list[name[i+1]]=find_latest_time(name[i+1])
+        end
+        var req_time = t.get_local_timestamp()
+    end
+    foreach i in range(name_number)
+        text("申请人"+get_user_name(name[i+1])+"在"+time_list[name[i+1]]+"提交了新的物品申请")
+        same_line()
+        if(button("详细信息##"+i))
+            window_opened_choose=true
+            name_set=i+1
+        end
+    end
+    if(window_opened_choose)
+        begin_review_commit_window1(commiter,window_opened_choose,name[name_set])
+    end
+    end_window()
+end
+##多选窗口
+function begin_review_commit_window1(commiter,window_opened2,mid_name)
+    begin_window("审核提交##choose",window_opened2,{})
+    if(button("刷新##get_new"))
+        read_db()
+    end
+    same_line()
+    if(button("全选##all_select"))
+        foreach i in range(res.size)
+            select[to_string(res[i][0].data)]=true
+        end
+    end
+    same_line()
+    if(button("取消全选##cancel_all_select"))
+        foreach i in range(res.size)
+            select[to_string(res[i][0].data)]=false
+        end
+    end
+    if(!window_opened2)
+        window_opened2=false
+    break
+    end
+    set_window_pos(vec2(150,50))
+    set_window_size(vec2(1500,900))
+    # set_window_focus()
+    foreach i in range(res.size)
+        if(res[i][4].data=="1"&&res[i][2].data==mid_name)
+            var mid=res[i][1].data.to_number()-1
+            check_box("物品名："+object[mid][1].data+" | "+"设备规格："+object[mid][2].data+" | 提交理由："+res[i][5].data+"##"+res[i][0].data,select[to_string(res[i][0].data)])
+        end
+        ##多选框直接打出提交原因
+    end
+    if(button("通过##1")||accept_window_flag)
+        accept_window_flag=true
+        window_accept_confirm=true
+        begin_window("##accept",window_accept_confirm,{})
+            set_window_pos(vec2(get_monitor_width(0)*0.3,get_monitor_height(0)*0.3))
+            set_window_size(vec2(500,300))
+            set_window_focus()
+            text("是否确定通过？")
+            if (button("确定##y"))
+                accept_window_flag=false
+                window_accept_confirm=false
+                accept()
+                review_commit_write_log(false,commiter)
+            end
+            same_line()
+            if (button("取消##n"))
+                accept_window_flag=false
+                window_accept_confirm=false
+            end
+        end_window()
+    end
+    same_line()
+    if(button("驳回##2")||reject_window_flag)
+        reject_window_flag=true
+        window_reject_confirm=true
+        begin_window("##accept",window_reject_confirm,{})
+            set_window_pos(vec2(get_monitor_width(0)*0.3,get_monitor_height(0)*0.3))
+            set_window_size(vec2(500,300))
+            set_window_focus()
+            text("是否确定驳回？")
+            if (button("确定##y"))
+                reject_window_flag=false
+                window_reject_confirm=false
+                window_opened_reson=true
+                reject()
+                review_commit_write_log(true,commiter)
+            end
+            same_line()
+            if (button("取消##n"))
+                reject_window_flag=false
+                window_reject_confirm=false
+            end
+        end_window()
+    end
+    ##理由提交窗口
+    if(window_opened_reson)
+        begin_reson_window()
+    end
+    ##审核通过成功提示窗口
+    if(accept_success_window_flag)
+        accept_success_window()
+    end
+    ##审核驳回成功提示窗口
+    if(reject_success_window_flag)
+        reject_success_window()
+    end
+    end_window()
+end

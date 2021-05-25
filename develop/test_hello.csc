@@ -12,6 +12,8 @@ while !app.is_closed()
     push_font(font)
     if window_opened
         hello.generate(window_opened)
+        var a ={ "1","2","3"}
+        var c1 = combo_box("筛选", 3,a )
     end
     pop_font()
     app.render()

@@ -23,9 +23,7 @@ set_font_scale(1.2)
 while !app.is_closed()
     app.prepare()
     push_font(font)
-
-    new_request.start(group_admin, app)
-
+    new_request.start(group_admin,app)
     pop_font()
     app.render()
 end

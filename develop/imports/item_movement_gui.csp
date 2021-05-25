@@ -1,0 +1,262 @@
+import db_connector
+import item_movement
+import imgui
+import imgui_font
+import time_base64
+package item_movement_gui 
+using system
+using imgui
+
+    #message为提交的信息是否正确，id campus building room为三组需要提交的信息，check_if为主界面提交按钮是否按下
+    #window1是用来提示是否提交成功的窗口
+    #var message=true
+    #var message2=true
+    #var message3=true
+    var campus=""
+    var id = ""
+    var building = ""
+    var room=""
+    var check_if = false
+    var check_if2 =false
+    var tab1=true
+    var tab2=true
+    var tab3=false
+    var TRUE=true
+    var select=new hash_map
+    var res = null
+    var message=0
+    var search_button=false
+    var main_window = true
+    var message_of_search=""
+    function load_datas()
+        res = item_movement.read_move_places()
+        select.clear()
+        foreach i in range(item_movement.how_many_lines())
+            select[to_string(res[i][0].data)]=false
+        end
+    end
+    load_datas()
+    function window1(campus,building,room)
+        var check_window=true
+        #check_window为主窗口
+        begin_window("提示##1",check_window,{flags.always_auto_resize,flags.no_collapse})
+        set_window_pos(vec2(app.get_window_width()/4,app.get_window_height()/4))
+        set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        set_window_focus()
+        text("提交成功")
+        #此处添加修改变动表(finish)
+        if (button("确定##1")||is_key_pressed(get_key_index(keys.enter))) 
+            check_window=false          
+        end
+        if check_window==false
+            check_if=false
+        end
+        end_window()
+        #上传到管理员处(需要增加)
+    end
+    function window2()
+        var check_window2=true
+        #check_window为主窗口
+        begin_window("提示##2",check_window2,{flags.always_auto_resize,flags.no_collapse})
+        set_window_pos(vec2(app.get_window_width()/4,app.get_window_height()/4))
+        set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        set_window_focus()
+        text("提交成功")
+        #此处添加修改变动表(finish)
+        if (button("确定##2")||is_key_pressed(get_key_index(keys.enter)))
+            check_window2=false    
+        end
+        if check_window2==false
+            check_if2=false  
+        end
+        end_window()
+        #上传到管理员处(需要增加)
+    end
+    function get_search_message(k)
+        if(k != "")
+        if item_movement.is_property_existed(k)
+            message_of_search=("物品:"+item_movement.search_name_by_id(k)+" 校区:"+item_movement.item_id_to_campus(k)+" 教学楼:"+item_movement.item_id_to_building(k)+" 门牌号:"+item_movement.item_id_to_room(k))
+        end
+        if item_movement.is_property_existed(k)==false
+            message_of_search=("物品不存在")      
+        end
+        else
+            message_of_search=("未输入id")
+        end
+    end
+    function window4(message)
+        var check_window4=true
+        #check_window为主窗口
+        begin_window("提示##4",check_window4,{flags.always_auto_resize,flags.no_collapse})
+        set_window_pos(vec2(app.get_window_width()/4,app.get_window_height()/4))
+        set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        set_window_focus()
+        if message==1
+            #window4(message)
+            text ("房间号不存在")
+        end
+        if message==2
+            #window4(message)
+            text ("物品已经移动")
+        end
+        if message==3
+            #window4(message)
+            text ("物品就在此地")
+        end    
+        if message==4
+            #window4(message)
+            text ("物品号不存在")
+        end  
+        if message==5
+            # window4(message)
+            text ("请输入内容")
+        end     
+        #此处添加修改变动表(finish)
+        
+        if (button("确定##4")||is_key_pressed(get_key_index(keys.enter)))
+            check_window4=false     
+        end
+        if check_window4==false
+            message=0  
+        end
+        end_window()
+        #上传到管理员处(需要增加)
+    end
+
+
+function start(account,windows_open,app)
+    if windows_open
+        begin_window("同级别移动",windows_open,{flags.no_move,flags.no_collapse})
+        set_window_pos(vec2(0,22))
+        set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        if button("打开所有标签")
+            tab1=true
+            tab2=true
+        end
+        same_line()
+        if begin_tab_bar("")
+            if begin_tab_item("提交界面",tab1,{})
+                text("申请信息录入")
+                separator()
+                text("请输入物品ID")
+                separator()
+                input_text("物品ID",id,128)
+                same_line()
+                if button("查询##1")
+                    search_button=true
+                    get_search_message(id)
+                end
+                if search_button
+                    text("查询结果：" + message_of_search)
+                end
+                separator()
+                text("请输入目的地信息")
+                separator()
+                #初步考虑把校区做成下拉框
+                input_text("校区",campus,128)
+                separator()
+                input_text("教学楼",building,128)
+                separator()
+                input_text("教室号",room,128)
+                separator()
+                if button("提交##1")
+                    #判断id是否存在和教室号是否存在(finish)
+                    if (id!="") and (campus != "") and (building != "") and (room != "")
+                    if(item_movement.is_property_existed(id)==true)
+                        if (item_movement.is_room_existed(campus,building,room) == true) and (item_movement.is_item_moved(id) == true) and (item_movement.is_item_moved_to_another_place(id,campus,building,room) == true)
+                            check_if = true
+                            item_movement.start_change(id, item_movement.find_room_uuid(campus,building,room))
+                        else 
+                            if (item_movement.is_room_existed(campus,building,room) == false)
+                                message = 1
+                            else
+                                if (item_movement.is_item_moved(id) == false)
+                                    message=2
+                                else 
+                                    if (item_movement.is_item_moved_to_another_place(id,campus,building,room) == false)
+                                        message=3
+                                    # else
+                                    #     if(item_movement.is_property_existed(id)==false)
+                                    #     message = 4
+                                    #     end
+                                    end
+                                end
+                            end
+                        end
+                    else
+                        message = 4
+                    end
+                    else
+                        message = 5
+                    end
+                    load_datas()
+                end
+                if message==1
+                    window4(message)
+                    text ("房间号不存在")
+                end
+                if message==2
+                    window4(message)
+                    text ("物品已经移动")
+                end
+                if message==3
+                    window4(message)
+                    text ("物品就在此地")
+                end 
+                if message==4
+                    window4(message)
+                    text ("物品号不存在")
+                end
+                if message==5
+                    window4(message)
+                    text ("请输入内容")
+                end           
+                if check_if
+                    window1(campus,building,room)           
+                end
+                end_tab_item()
+            end
+            #出大问题
+            if begin_tab_item("申请界面",tab2,{})
+
+                foreach i in range(item_movement.how_many_lines())
+                        check_box("物品id"+res[i][1].data+"        名称:"+item_movement.search_name_by_id(res[i][1].data)+"             来源地:"+item_movement.uuid_to_campus(res[i][2].data)+item_movement.uuid_to_building(res[i][2].data)+item_movement.uuid_to_room(res[i][2].data)+"             目的地:"+item_movement.uuid_to_campus(res[i][3].data)+item_movement.uuid_to_building(res[i][3].data)+item_movement.uuid_to_room(res[i][3].data)+"\n"+time_base64.timestamp2string(res[i][6].data),select[to_string(res[i][0].data)])
+
+                end
+                #打印变动表 
+                
+                if button("同意##2")
+                    foreach i in range(item_movement.how_many_lines())
+                        if select[to_string(res[i][0].data)]
+                            item_movement.acceptance_of_demand(res[i][1].data)
+                            #做多选框
+                            #修改信息表，删除变动表
+                        end
+                    end
+                    check_if2=true
+                    
+
+                end
+                if button("驳回##2")
+                    foreach i in range(item_movement.how_many_lines())
+                        if select[to_string(res[i][0].data)]
+                            item_movement.rejection_of_demand(res[i][1].data)
+                            #做驳回多选框
+                            #修改信息表，删除变动表
+                        end
+                    end
+                    check_if2=true
+                    
+
+                end
+                if check_if2==true
+                    window2()
+                end
+                end_tab_item()
+            end
+            end_tab_bar()
+            
+        end
+        end_window()
+    end
+end
