@@ -125,7 +125,7 @@ using imgui
 
 function start(account,windows_open,app)
     if windows_open
-        begin_window("小组管理员界面",windows_open,{flags.no_move,flags.no_collapse})
+        begin_window("同级别移动",windows_open,{flags.no_move,flags.no_collapse})
         set_window_pos(vec2(0,22))
         set_window_size(vec2(app.get_window_width(),app.get_window_height()))
         if button("打开所有标签")
