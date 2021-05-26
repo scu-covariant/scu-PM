@@ -52,7 +52,7 @@ namespace data
 end
 
 function mywindow()
-    begin_window("审核提交##choose",if_mywindow,{})
+    begin_window("审核提交##choose",if_mywindow,{flags.no_resize,flags.no_move,flags.no_collapse})
     set_window_size(operating_window_size)
     set_window_pos(operating_window_location)
     var length = data.info.size
