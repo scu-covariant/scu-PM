@@ -32,6 +32,7 @@ namespace data
     var stat = {true,true,true,true,true,true}
     # generate info
     function init_info()
+        data.info.clear()
         foreach i in range(10)
             var tmp = new hash_map
                 tmp.insert(data.tag[0] , "马晓晨"+ to_string(i) )
@@ -59,12 +60,27 @@ function mywindow()
     var width = data.tag.size
     var opened = false
         # 表格化主要由本控件实现：
+        # false是不显示竖线，true是显示竖线
         columns(width,"",true)
         # 渲染第一排和排序
         foreach i in range(data.tag.size)
             text(data.tag[i])
             same_line()
             if button("排序##sort" + data.tag[i])
+                data.info_sort(i,data.stat[i])
+                data.stat[i] = !data.stat[i]
+            end
+            next_column()
+        end
+        # 每一行结束都需要手动渲染横线separator()
+        separator()
+        #另一种排序方式的实现
+        text("#单击第二行排序")
+        foreach i in range(data.tag.size)
+            opened = false
+            selectable(data.tag[i],opened)
+            ## 这个是利用鼠标事件触发的方式“单击”可选列表控件实现排序操作
+            if is_item_hovered()&&is_mouse_clicked(0)
                 data.info_sort(i,data.stat[i])
                 data.stat[i] = !data.stat[i]
             end
@@ -87,6 +103,11 @@ function mywindow()
             end
         end
         separator()
+        # 注意，表格布局想要重新布局就得需要创建一个新的”列“，设为1列即为原样
+        columns(1,"",false)
+        if button("重新生成")
+            data.init_info()
+        end
     end_window()
 end
 
