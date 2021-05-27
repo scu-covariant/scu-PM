@@ -7,7 +7,7 @@
             "no-opt": false,
             "compile-only":false,
             "import_path":["develop/imports"],
-            "require" : ["imgui","csdbc_mysql"],
+            "require" : ["imgui","csdbc_mysql","imgui_font"],
             "arguments":""
         }
     }
