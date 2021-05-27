@@ -74,10 +74,10 @@ using imgui
     end
     function get_search_message(k)
         if(k != "")
-        if item_movement.is_property_existed(k)
+        if item_movement.is_property_existed(k.to_number())
             message_of_search=("物品:"+item_movement.search_name_by_id(k)+" 校区:"+item_movement.item_id_to_campus(k)+" 教学楼:"+item_movement.item_id_to_building(k)+" 门牌号:"+item_movement.item_id_to_room(k))
         end
-        if item_movement.is_property_existed(k)==false
+        if item_movement.is_property_existed(k.to_number())==false
             message_of_search=("物品不存在")      
         end
         else

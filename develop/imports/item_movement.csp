@@ -355,3 +355,7 @@ function search_room_by_building_and_campus_and_floor(dd_first,dd_second,dd_thir
     var res = db.exec("select dd_fourth from places where dd_first = \""+ dd_first +"\" and dd_second = \""+dd_second+"\" and dd_third = \""+dd_third+"\"")
     return res
 end
+function search_what_table(tablename)
+    var res = db.just_exec("select * from"+ tablename)
+    return res
+end
