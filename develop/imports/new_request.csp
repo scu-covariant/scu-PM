@@ -25,6 +25,12 @@ var all_reasons = new string # 统一修改原因
 
 var selected_fix = new hash_map # 勾选框勾选状况存储表
 
+var monitor_w = get_monitor_width(0)
+var monitor_h = get_monitor_height(0)
+
+var operating_window_size = vec2(to_integer(monitor_w/4*3),to_integer(monitor_h/8*7))
+var operating_window_location = vec2(to_integer(monitor_w/4),to_integer(monitor_h/8))
+
 var db = db_connector.start()
 
 class Single
@@ -96,14 +102,11 @@ end
 
 # 提交新物品信息界面
 function new_req(group_admin,app)
-    system.out.println("req_opened")
-    system.out.println(req_opened)
     if req_opened
         var ropen = true
-        system.out.println(ropen)
         begin_window("提交新物品信息##提交新物品信息",ropen,{})
-        set_window_pos(vec2(0,0))
-        set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        set_window_pos(operating_window_location)
+        set_window_size(operating_window_size)
         system.out.println("enter")
         text("请选择")
         if button("单条录入##single")
@@ -136,8 +139,8 @@ function single(sin_opened,group_admin)
     if sin_opened
         var sopen = true
         begin_window("单条录入",sopen,{})
-        set_window_pos(vec2(0,0))
-        set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        set_window_pos(operating_window_location)
+        set_window_size(operating_window_size)
         text("设备名称")
         input_text("##eq_name", single_arr.eq_name, 255)
         text("规格型号")
@@ -231,8 +234,8 @@ function file_in(file_opened,group_admin)
     if file_opened
         var fileopen = true
         begin_window("通过文件导入",fileopen,{})
-        set_window_pos(vec2(0,0))
-        set_window_size(vec2(app.get_window_width(),app.get_window_height()))
+        set_window_pos(operating_window_location)
+        set_window_size(operating_window_size)
         text("请输入文件地址")
         input_text("##address",address,255)
         same_line()
@@ -333,7 +336,6 @@ function fix(group_admin)
         find_nt()
     else
         fix_request(group_admin)
-        system.out.println("驳回查看主界面被调用")
     end
 end
 
@@ -360,8 +362,8 @@ end
 # 被驳回申请查看窗口
 function fix_request(group_admin)
     begin_window("被驳回申请查看窗口",fix_opened,{})
-        set_window_pos(vec2(0,0))
-        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        set_window_pos(operating_window_location)
+        set_window_size(operating_window_size)
         if button("返回##return")
             fix_opened = false
             find_rej = true
@@ -428,8 +430,8 @@ end
 # 批量编辑及批量提交窗口
 function multi_deal()
     begin_window("批量修改窗口",multi_opened,{})
-        set_window_pos(vec2(0,0))
-        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        set_window_pos(operating_window_location)
+        set_window_size(operating_window_size)
         if button("返回##return_multi") or !multi_opened
             multi_opened = false
             break
@@ -549,7 +551,7 @@ function one_reject_info(info, count)
                     str.push_back(info[0].name[i] + "待审核")
                     continue
                 else
-                    str.push_back(info[0].name[i] + "出大问题")
+                    str.push_back(info[0].name[i] + "数据出错")
                     continue
                 end
             end
@@ -589,8 +591,8 @@ function change(info, count)
     var a = false
     var b = false
     begin_window("单条修改提交窗口",ch_opened,{})
-        set_window_pos(vec2(0,0))
-        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        set_window_pos(operating_window_location)
+        set_window_size(operating_window_size)
         var str_1 = new array
         foreach i in range(0,12)
             if i!=5 and i!=7 and i!=8 and i!= 11
@@ -615,7 +617,7 @@ function change(info, count)
                     str_1.push_back("待审核")
                     continue
                 else
-                    str_1.push_back("出大问题")
+                    str_1.push_back("数据出错")
                     continue
                 end
             end
@@ -720,8 +722,8 @@ function multi_change(info)
     end
     var a = false
     begin_window("单独编辑窗口",mc_opened,{})
-        set_window_pos(vec2(0,0))
-        set_window_size(vec2(get_monitor_width(0),get_monitor_height(0)))
+        set_window_pos(operating_window_location)
+        set_window_size(operating_window_size)
         var str_1 = new array
         foreach i in range(0,12)
             if i!=5 and i!=7 and i!=8 and i!= 11
@@ -746,7 +748,7 @@ function multi_change(info)
                     str_1.push_back("待审核")
                     continue
                 else
-                    str_1.push_back("出大问题")
+                    str_1.push_back("数据出错")
                     continue
                 end
             end
@@ -793,6 +795,8 @@ function multi_change(info)
             text(info[1].name[i])
             input_text(str, str_3[i], 100)
         end
+        text("")
+        text("")
 
         foreach i in range(0, 12)
             if i != 0 and i != 5 and i != 7 and i != 8 and i != 9 and i != 11 and i != 10
