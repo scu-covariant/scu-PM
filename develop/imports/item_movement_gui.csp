@@ -6,12 +6,14 @@ import time_base64
 package item_movement_gui 
 using system
 using imgui
-
+var db = db_connector.start()
     #message为提交的信息是否正确，id campus building room为三组需要提交的信息，check_if为主界面提交按钮是否按下
     #window1是用来提示是否提交成功的窗口
     #var message=true
     #var message2=true
     #var message3=true
+    var a=item_movement.read_message_from_move_places()
+    var line_number=item_movement.how_many_lines()
     var campus=""
     var id = ""
     var building = ""
@@ -28,6 +30,7 @@ using imgui
     var search_button=false
     var main_window = true
     var message_of_search=""
+    
     function load_datas()
         res = item_movement.read_move_places()
         select.clear()
@@ -74,10 +77,10 @@ using imgui
     end
     function get_search_message(k)
         if(k != "")
-        if item_movement.is_property_existed(k)
+        if item_movement.is_property_existed(k.to_number())
             message_of_search=("物品:"+item_movement.search_name_by_id(k)+" 校区:"+item_movement.item_id_to_campus(k)+" 教学楼:"+item_movement.item_id_to_building(k)+" 门牌号:"+item_movement.item_id_to_room(k))
         end
-        if item_movement.is_property_existed(k)==false
+        if item_movement.is_property_existed(k.to_number())==false
             message_of_search=("物品不存在")      
         end
         else
@@ -126,7 +129,7 @@ using imgui
 
 function start(account,windows_open,app)
     if windows_open
-        begin_window("同级别移动",windows_open,{flags.no_move,flags.no_collapse})
+        begin_window("小组管理员界面",windows_open,{flags.no_move,flags.no_collapse})
         set_window_pos(vec2(0,22))
         set_window_size(vec2(app.get_window_width(),app.get_window_height()))
         if button("打开所有标签")
@@ -216,43 +219,52 @@ function start(account,windows_open,app)
                 end
                 end_tab_item()
             end
-            #出大问题
+            
             if begin_tab_item("申请界面",tab2,{})
-
-                foreach i in range(item_movement.how_many_lines())
-                        check_box("物品id"+res[i][1].data+"        名称:"+item_movement.search_name_by_id(res[i][1].data)+"             来源地:"+item_movement.uuid_to_campus(res[i][2].data)+item_movement.uuid_to_building(res[i][2].data)+item_movement.uuid_to_room(res[i][2].data)+"             目的地:"+item_movement.uuid_to_campus(res[i][3].data)+item_movement.uuid_to_building(res[i][3].data)+item_movement.uuid_to_room(res[i][3].data)+"\n"+time_base64.timestamp2string(res[i][6].data),select[to_string(res[i][0].data)])
+                
+                foreach i in range(line_number)
+                        check_box("物品id"+a[i][0]+"名称:"+a[i][1]+"来源地:"+a[i][2]+a[i][3]+a[i][4]+"目的地:"+a[i][5]+a[i][6]+a[i][7]+"\n"+a[i][8],select[to_string(res[i][0].data)])
 
                 end
+                
                 #打印变动表 
                 
                 if button("同意##2")
-                    foreach i in range(item_movement.how_many_lines())
+                    foreach i in range(line_number)
                         if select[to_string(res[i][0].data)]
                             item_movement.acceptance_of_demand(res[i][1].data)
-                            #做多选框
-                            #修改信息表，删除变动表
+                            
+                           
+                          
                         end
+                        
+                        
                     end
+                    a=item_movement.read_message_from_move_places()
+                    line_number=item_movement.how_many_lines()
                     check_if2=true
-                    
+                    load_datas()
 
                 end
                 if button("驳回##2")
-                    foreach i in range(item_movement.how_many_lines())
+                    foreach i in range(line_number)
                         if select[to_string(res[i][0].data)]
                             item_movement.rejection_of_demand(res[i][1].data)
-                            #做驳回多选框
-                            #修改信息表，删除变动表
+                           
                         end
+                      
                     end
+                    a=item_movement.read_message_from_move_places()
+                    line_number=item_movement.how_many_lines()
                     check_if2=true
-                    
+                    load_datas()    
 
                 end
                 if check_if2==true
                     window2()
                 end
                 end_tab_item()
+                
             end
             end_tab_bar()
             
