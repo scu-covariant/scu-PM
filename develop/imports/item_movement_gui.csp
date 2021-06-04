@@ -7,6 +7,26 @@ package item_movement_gui
 using system
 using imgui
 var db = db_connector.start()
+namespace data
+    # 数据本身
+    var info = new array
+    # 字段列表
+    var tag = { "序号","物品id","名称","来源地","目的地","时间"}
+    # 控制升降序
+    #var stat = {true,true,true,true,true,true}
+    # generate info
+    function init_info()
+        data.info.clear()
+        foreach i in range(line_number)
+            var tmp = new hash_map
+                tmp.insert(data.tag[0] ,to_string(i+1) )
+            foreach j in range(1,6,1)
+                tmp.insert(data.tag[j],a[i][j-1])
+            end
+            data.info.push_back(tmp)
+        end
+    end
+end
     #message为提交的信息是否正确，id campus building room为三组需要提交的信息，check_if为主界面提交按钮是否按下
     #window1是用来提示是否提交成功的窗口
     #var message=true
@@ -221,24 +241,52 @@ function start(account,windows_open,app)
             end
             
             if begin_tab_item("申请界面",tab2,{})
-                
-                foreach i in range(line_number)
-                        check_box("物品id"+a[i][0]+"名称:"+a[i][1]+"来源地:"+a[i][2]+a[i][3]+a[i][4]+"目的地:"+a[i][5]+a[i][6]+a[i][7]+"\n"+a[i][8],select[to_string(res[i][0].data)])
+               
+                #foreach i in range(line_number)
+                #        check_box("物品id"+a[i][0]+"名称:"+a[i][1]+"来源地:"+a[i][2]+"目的地:"+a[i][3]+"\n"+a[i][4],select[to_string(res[i][0].data)])
 
-                end
+                #end
                 
                 #打印变动表 
-                
-                if button("同意##2")
-                    foreach i in range(line_number)
-                        if select[to_string(res[i][0].data)]
-                            item_movement.acceptance_of_demand(res[i][1].data)
-                            
-                           
-                          
+                data.init_info()
+                var length = data.info.size
+                var width = data.tag.size
+                var opened = false
+                    # 表格化主要由本控件实现：
+                    # false是不显示竖线，true是显示竖线
+                    columns(width,"",true)
+                    # 渲染第一排和排序
+                    foreach i in range(data.tag.size)
+                        text(data.tag[i])
+                        
+                        next_column()
+                    end
+                    # 每一行结束都需要手动渲染横线separator()
+                    separator()
+                    # 渲染之后的数据
+                    foreach i in range(length)
+                        foreach j in range(width)
+                            if get_column_index()==0                             
+                                separator()
+                            end
+                            if j==0
+                                check_box(data.info[i]["物品id"] + "##box"+data.info[i]["物品id"],select[to_string(res[i][0].data)])   
+                            end
+                            if j!=0                    
+                                         
+                                text(to_string(data.info[i][data.tag[j]]))  
+                            end                          
+                            next_column()
                         end
-                        
-                        
+                    end
+                    separator()
+                    columns(1,"",false)
+                    # 注意，表格布局想要重新布局就得需要创建一个新的”列“，设为1列即为原样          
+                if button("同意##2")
+                    foreach i in range(length)
+                        if select[to_string(res[i][0].data)]
+                            item_movement.acceptance_of_demand(res[i][1].data)                                                       
+                        end                                                
                     end
                     a=item_movement.read_message_from_move_places()
                     line_number=item_movement.how_many_lines()
@@ -247,7 +295,7 @@ function start(account,windows_open,app)
 
                 end
                 if button("驳回##2")
-                    foreach i in range(line_number)
+                    foreach i in range(length)
                         if select[to_string(res[i][0].data)]
                             item_movement.rejection_of_demand(res[i][1].data)
                            
