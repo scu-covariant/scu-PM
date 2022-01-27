@@ -162,7 +162,6 @@ while !app.is_closed()
         style_color_light()
         push_font(font)
         login_window()
-        login_success()
         campus_manager()
         group_manager()
         # 校区管理员审核加入的物品：
@@ -178,6 +177,7 @@ while !app.is_closed()
         if if_item_movement
             item_movement_gui.start(account,if_item_movement,app)
         end
+        login_success()
         pop_font()    
     app.render()
 end
